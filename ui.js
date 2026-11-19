@@ -116,7 +116,7 @@ U.janice = (pose) => {
   const f = $('janBtn'); f.classList.remove('cheer', 'worried'); void f.offsetWidth;
   if (pose === 'cheer' || pose === 'worried') f.classList.add(pose);
 };
-const TIPS = ['Line up four or more of a kind. Three in a row is not enough down here!', 'A 2x2 square calls a sea turtle to help you.',
+const TIPS = ['Line up three or more of a kind in a row or column.', 'A 2x2 square calls a sea turtle to help you.',
   'Five in a row makes the Queen\'s Amulet. Swap it with any piece!', 'Swap two powers together for a much bigger splash.',
   'Every 10 stars opens a treasure chest.', 'Clear a region\'s last expedition to restore its habitat.'];
 let tipI = 0;
@@ -213,7 +213,7 @@ U.resume = () => { Pop.close(); U.unpauseClock(); };
 const T = (text, o = {}) => ({ k: 'text', text, ...o });
 const sp = (h) => ({ k: 'space', h });
 const btns = (list, row) => ({ k: 'buttons', list, row });
-const RULES = 'Swipe a piece onto its neighbour, or tap two neighbours, to swap them. Line up four or more of a kind. A square of four, an L or a T counts too. Three in a row is not enough.';
+const RULES = 'Swipe a piece onto its neighbour, or tap two neighbours, to swap them. Line up three or more of a kind in a row or column. A square of four, an L, a T or a cross counts too.';
 
 const introDone = () => { P.introSeen = true; Q.saveProgress(); Pop.close(); U.say('Welcome aboard! Pick the glowing expedition on the map.', 3200, 'cheer'); };
 U.showIntro = () => Pop.show(() => ({ width: 460, outside: introDone, items: [
@@ -366,7 +366,7 @@ U.showLog = () => Pop.show(() => {
 
 const CONCEPT = [
   ['The story', 'Queen of the Seas is a puzzle quest adventure based on the book Underwater Adventure: Deep Sea Odyssey. Marine biologist Dr. Janice Miller, the Queen of the Seas, follows a trail of glowing gems through seven ocean habitats that strange currents have dimmed. Every puzzle gathers the gems, pearls and compasses she needs to bring a habitat back to life.'],
-  ['How a level plays', 'Swap two neighbouring pieces to line up four or five of a kind. A line of three is not enough; a square of four, an L or a T also counts. Each expedition sets a goal and a number of moves: reach a score, or collect a number of one kind of piece. Moves left at the end turn into bonus points and more stars.'],
+  ['How a level plays', 'Swap two neighbouring pieces to line up three or more of a kind in a row or column. A square of four, an L, a T or a cross also counts. Each expedition sets a goal and a number of moves: reach a score, or collect a number of one kind of piece. Moves left at the end turn into bonus points and more stars.'],
   ['Pieces and powers', 'Five pieces: amethyst, emerald, sapphire, pearl and the gold compass. Four in a row makes a Tide gem that sweeps its row or column. An L or a T makes a Whirlpool. A square calls a Sea Turtle that swims to three pieces. Five in a row makes the Queen\'s Amulet, which clears every piece of one kind. Two powers swapped together make a bigger blast.'],
   ['The expedition map', '105 expeditions in seven regions of 15: Coral Crown Bay, Seahorse Meadows, Sunken Observatory, Jellyfish Cathedral, Frozen Blue Frontier, Midnight Trench and the Crown of the Abyss. Every second expedition is played on a staggered board, every third is a collection dive, and each one asks for a little more.'],
   ['Prizes and advancement', 'Each win earns up to three stars and pearls. Every 10 stars opens a treasure chest of Tridents, Amulets and pearls. The last expedition of a region restores its habitat and reveals a field note. Stars raise your rank from Reef Explorer to Coral Keeper, Tide Warden, Deep Sea Ranger, Ocean Sage, Abyssal Guardian and Queen\'s Champion. Pearls buy boosters in the treasure shop.'],

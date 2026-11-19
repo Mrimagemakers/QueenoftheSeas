@@ -235,10 +235,10 @@ function buildGeometry() {
 function makeSet(clip) {
   const planes = clip ? [S.clipPlane] : null;
   const M = (o, phys = true) => { const m = phys ? new TH.MeshPhysicalMaterial(o) : new TH.MeshStandardMaterial(o); if (planes) m.clippingPlanes = planes; return m; };
-  const gem = (hex, extra = {}) => M({ color: hex, metalness: 0.5, roughness: 0.07, clearcoat: 0.8, clearcoatRoughness: 0.04, flatShading: true,
-    emissive: hex, emissiveIntensity: 0.07, envMapIntensity: 1.5, specularIntensity: 0.6, ior: 1.8, ...extra });
+  const gem = (hex, extra = {}) => M({ color: hex, metalness: 0.23, roughness: 0.31, clearcoat: 0.24, clearcoatRoughness: 0.28, flatShading: true,
+    emissive: hex, emissiveIntensity: 0.035, envMapIntensity: 0.7, specularIntensity: 0.32, ior: 1.6, ...extra });
   const set = {
-    gem: [gem(0x6a1fd0, { iridescence: 0.35, iridescenceIOR: 1.5 }), gem(0x02904f), gem(0x0f36d8, { emissiveIntensity: 0.16 })],
+    gem: [gem(0x7926ba, { iridescence: 0.15, iridescenceIOR: 1.5 }), gem(0x007c4e), gem(0x0755bf)],
     pearl: M({ color: 0xb8ada3, roughness: 0.3, metalness: 0, iridescence: 1, iridescenceIOR: 1.65, iridescenceThicknessRange: [180, 620],
       sheen: 0.6, sheenColor: new TH.Color(0xffd2ec), sheenRoughness: 0.4, clearcoat: 0.6, clearcoatRoughness: 0.12, envMapIntensity: 0.9 }),
     gold: M({ color: 0xe0a83c, metalness: 1, roughness: 0.3, envMapIntensity: 1.1 }, false),
@@ -250,7 +250,7 @@ function makeSet(clip) {
     stripe: new TH.MeshBasicMaterial({ map: S.jetTex, color: 0xffffff, transparent: true, opacity: 0.9, blending: TH.AdditiveBlending, depthWrite: false, clippingPlanes: planes }),
     shell: new TH.MeshPhysicalMaterial({ color: 0x8ff3ff, transparent: true, opacity: 0.22, roughness: 0.05, metalness: 0, clearcoat: 1, depthWrite: false, envMapIntensity: 2, clippingPlanes: planes }),
     spiral: new TH.MeshBasicMaterial({ color: 0xbffcff, transparent: true, opacity: 0.85, blending: TH.AdditiveBlending, depthWrite: false, clippingPlanes: planes }),
-    halo: Q.HEX.map(h => new TH.MeshBasicMaterial({ color: h, transparent: true, opacity: 0.9, blending: TH.AdditiveBlending, depthWrite: false, clippingPlanes: planes }))
+    halo: Q.HEX.map(h => new TH.MeshBasicMaterial({ color: h, transparent: true, opacity: 0.58, blending: TH.AdditiveBlending, depthWrite: false, clippingPlanes: planes }))
   };
   return set;
 }
@@ -259,7 +259,7 @@ function makeMaterials() {
   S.MB = makeSet(true);   // on the board, clipped at the top of the grid
   S.MF = makeSet(false);  // in effects and pop-ups
   S.tex('assets/compass_face.webp').then(t => { if (!t) return; for (const s of [S.MB, S.MF]) { s.face.map = t; s.face.needsUpdate = true; } });
-  S.shardMat = [0x9a4dff, 0x0fc277, 0x2d63ff, 0xf6efe6, 0xe8b64c].map((h, i) => new TH.MeshStandardMaterial({ color: h, metalness: i === 4 ? 1 : 0.1, roughness: 0.15, flatShading: true, emissive: h, emissiveIntensity: 0.35, transparent: true }));
+  S.shardMat = [0x9a4dff, 0x0fc277, 0x2d63ff, 0xf6efe6, 0xe8b64c].map((h, i) => new TH.MeshStandardMaterial({ color: h, metalness: i === 4 ? 1 : 0.1, roughness: 0.15, flatShading: true, emissive: h, emissiveIntensity: 0.12, transparent: true }));
   // the sea turtle model
   S.turtle = null;
   if (TH.GLTFLoader) new TH.GLTFLoader().load('assets/sea_turtle.glb', (g) => {

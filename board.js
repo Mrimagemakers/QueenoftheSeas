@@ -110,7 +110,7 @@ B.begin = (info) => {
   Snd.play('whoosh', { vol: 0.5, rate: 0.8 });
   B.startRun();
   Q.U.syncGoal(); Q.U.refreshBoosters();
-  Q.U.say(info.kind === 'collect' ? `Collect ${info.count} ${Q.PLURAL[info.ctype]} in ${info.moves} moves! Line up four or more.` : `Reach ${Q.fmt(info.target)} points in ${info.moves} moves! Line up four or more.`, 3800, 'point');
+  Q.U.say(info.kind === 'collect' ? `Collect ${info.count} ${Q.PLURAL[info.ctype]} in ${info.moves} moves! Line up three or more.` : `Reach ${Q.fmt(info.target)} points in ${info.moves} moves! Line up three or more.`, 3800, 'point');
 };
 B.fillFresh = () => {
   let tries = 0;
@@ -191,7 +191,7 @@ B.stopHint = () => { if (!B.hinting) return; for (const n of B.hinting) n.userDa
 
 const wait = (ms) => Q.game.wait(ms);
 
-// ---------- rules: a line of four or more, a 2x2 square, or an L, T or cross ----------
+// ---------- rules: a line of three or more, a 2x2 square, or an L, T or cross ----------
 B.findGroups = () => {
   const G = B.grid, sets = [];
   const same = (a, b) => a && b && a.sp !== 'b' && b.sp !== 'b' && a.t === b.t && a.t >= 0;
@@ -205,13 +205,11 @@ B.findGroups = () => {
   sets.forEach((s, i) => s.cells.forEach(p => { const k = p.r * N + p.c; if (owner[k] !== undefined) parent[find(i)] = find(owner[k]); else owner[k] = i; }));
   const groups = {};
   sets.forEach((s, i) => { const g = groups[find(i)] || (groups[find(i)] = { runs: [], squares: [], cells: new Map() }); (s.dir === 's' ? g.squares : g.runs).push(s); s.cells.forEach(p => g.cells.set(p.r * N + p.c, p)); });
-  const out = [];
   for (const g of Object.values(groups)) {
     g.max = Math.max(0, ...g.runs.map(r => r.cells.length));
     g.hasH = g.runs.some(r => r.dir === 'h'); g.hasV = g.runs.some(r => r.dir === 'v');
-    if (g.max >= 4 || (g.hasH && g.hasV) || g.squares.length) out.push(g);
   }
-  return out;
+  return Object.values(groups);
 };
 B.findMove = () => {
   const G = B.grid, moves = [];
