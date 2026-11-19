@@ -28,25 +28,43 @@ Q.REGIONS = [
   { key: 'bg_midnight_trench', name: 'Midnight Trench', blurb: 'Lanterns and crystals in the deep dark',
     note: ['A light in the dark', 'The anglerfish carries a glowing lure on its head. In the midnight zone, where sunlight never reaches, light is a meal ticket.'] },
   { key: 'bg_crown_of_the_abyss', name: 'Crown of the Abyss', blurb: 'The sunken palace of the Queen of the Seas',
-    note: ['Guardian of the seas', 'More than half of the oxygen we breathe is made by tiny ocean plants. Protecting the sea protects every one of us.'] }
+    note: ['Guardian of the seas', 'More than half of the oxygen we breathe is made by tiny ocean plants. Protecting the sea protects every one of us.'] },
+  { key: 'bg_sunken_observatory', name: 'The Shipwreck Vault', blurb: 'Follow the wreck trail and recover the captain’s lost treasure',
+    note: ['The wreck trail', 'Dr. Miller logs the captain’s compass and leaves the wreck intact for the next expedition.'] },
+  { key: 'bg_midnight_trench', name: 'The Sapphire Passage', blurb: 'Cross the deep passage to recover the Queen’s lost regalia',
+    note: ['The last beacon', 'Dr. Miller marks a safe route through the passage so the next crew can find its way home.'] }
 ];
 Q.PER = 15; Q.LEVELS = Q.REGIONS.length * Q.PER;
 
 Q.RANKS = [[0, 'Reef Explorer'], [12, 'Coral Keeper'], [35, 'Tide Warden'], [70, 'Deep Sea Ranger'], [120, 'Ocean Sage'], [190, 'Abyssal Guardian'], [270, "Queen's Champion"]];
 Q.rankIndex = (stars) => { let i = 0; Q.RANKS.forEach((r, k) => { if (stars >= r[0]) i = k; }); return i; };
 Q.CHEST_EVERY = 10;
+Q.RELICS = {
+  110: { name: 'Captain’s Compass', pearls: 150, trident: 1, amulet: 1 },
+  115: { name: 'Wreckkeeper’s Key', pearls: 200, trident: 2, amulet: 1 },
+  120: { name: 'Gilded Sextant', pearls: 300, trident: 2, amulet: 2 },
+  125: { name: 'Sapphire Seal', pearls: 250, trident: 1, amulet: 2 },
+  130: { name: 'Moon Pearl Tiara', pearls: 350, trident: 2, amulet: 2 },
+  135: { name: 'Crown of the Deep', pearls: 500, trident: 3, amulet: 3 }
+};
 
 Q.levelInfo = (n) => {
   const T = Q.T;
   n = Q.clamp(Math.round(n) || 1, 1, Q.LEVELS);
   const wi = Math.floor((n - 1) / Q.PER);
   const step = T.goal_step ?? 300, dropEvery = Math.max(1, T.moves_drop_every ?? 5);
-  const target = Math.round(((T.target ?? 8000) + step * (n - 1)) / 100) * 100;
-  const moves = Math.max(T.min_moves ?? 12, (T.moves ?? 20) - Math.floor((n - 1) / dropEvery));
+  const legacyEnd = 105;
+  const extra = Math.max(0, n - legacyEnd);
+  const boardSize = extra ? [9, 7, 8][(extra - 1 + Math.floor((extra - 1) / 3)) % 3] : Q.N;
+  const boardScale = boardSize === 7 ? 0.68 : boardSize === 9 ? 1.12 : 0.85;
+  const baseTarget = (T.target ?? 8000) + step * (Math.min(n, legacyEnd) - 1);
+  const target = Math.round((extra ? (baseTarget + extra * step * 0.4) * boardScale : baseTarget) / 100) * 100;
+  const moves = Math.max(T.min_moves ?? 12, (T.moves ?? 20) - Math.floor((n - 1) / dropEvery), extra ? 20 : 0);
   const collect = n % 3 === 0;
-  const info = { n, wi, region: Q.REGIONS[wi], target, moves, brick: n % 2 === 0, kind: collect ? 'collect' : 'score',
+  const info = { n, wi, region: Q.REGIONS[wi], target, moves, boardSize, brick: extra ? boardSize === 8 : n % 2 === 0, kind: collect ? 'collect' : 'score',
     star2: Math.round(target * 1.35), star3: Math.round(target * 1.7), last: n % Q.PER === 0 };
   if (collect) { info.ctype = (n * 2 + wi) % Q.TYPES; info.count = Math.min(T.collect_max ?? 30, (T.collect_base ?? 12) + Math.floor(n / 5)); }
+  if (collect && extra && boardSize === 7) info.count = Math.ceil(info.count * 0.8);
   return info;
 };
 Q.goalText = (L) => L.kind === 'collect' ? `Collect ${L.count} ${Q.PLURAL[L.ctype]}` : `Reach ${Q.fmt(L.target)} points`;

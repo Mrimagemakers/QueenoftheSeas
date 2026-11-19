@@ -1,7 +1,8 @@
 /* Queen of the Seas: the board. Rules, moves, specials, boosters and every move drawn in Three.js. */
 (() => {
 'use strict';
-const Q = window.QOS, TH = window.THREE, S = Q.S, N = Q.N;
+const Q = window.QOS, TH = window.THREE, S = Q.S;
+let N = Q.N;
 const mb = window.mindblown;
 const Snd = Q.Snd, E = Q.Ease;
 
@@ -97,6 +98,7 @@ Q.onTurtle = () => { for (const row of B.grid) for (const c of row || []) if (c?
 B.show = (on) => { B.visible = on; B.group.visible = on; };
 B.begin = (info) => {
   B.level = info;
+  N = info.boardSize;
   B.moves = B.movesMax = info.moves; B.score = 0; B.collected = 0;
   B.over = false; B.busy = false; B.running = false; B.paused = false; B.armed = null; B.sel = null; B.selGlow.visible = false;
   B.panelSig = null;
@@ -604,6 +606,13 @@ B.win = async () => {
   const pearls = (firstClear ? 20 : 5) + gainedStars * 10;
   P.pearls += pearls;
   const prizes = [];
+  const relic = Q.RELICS[L.n];
+  if (firstClear && relic) {
+    P.pearls += relic.pearls;
+    P.boost.trident = Math.min(99, P.boost.trident + relic.trident);
+    P.boost.amulet = Math.min(99, P.boost.amulet + relic.amulet);
+    prizes.push({ k: 'relic', relic });
+  }
   if (L.last && firstClear && !P.restored.includes(L.wi)) { P.restored.push(L.wi); P.pearls += 250; prizes.push({ k: 'region', wi: L.wi }); }
   const starsNow = Q.totalStars();
   const chests = Math.floor(starsNow / Q.CHEST_EVERY) - P.chests;

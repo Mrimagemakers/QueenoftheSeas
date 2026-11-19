@@ -61,7 +61,7 @@ U.syncGoal = () => {
     $('gText').innerHTML = `<img src="assets/icon_chest.webp" alt="">Next treasure chest: ${into} of ${Q.CHEST_EVERY} stars`;
     $('gFill').style.width = (into / Q.CHEST_EVERY * 100) + '%';
     ticks.forEach((t, i) => { t.style.display = i === 2 ? '' : 'none'; t.classList.toggle('on', false); });
-    $('gScore').querySelector('small').textContent = 'Habitats'; $('gScoreN').textContent = `${P.restored.length}/7`;
+    $('gScore').querySelector('small').textContent = 'Habitats'; $('gScoreN').textContent = `${P.restored.length}/${Q.REGIONS.length}`;
     return;
   }
   const L = B.level; if (!L) return;
@@ -157,6 +157,11 @@ U.buildMap = () => {
       const b = document.createElement('button'); b.className = 'node'; b.style.left = xp + '%'; b.style.top = yp + 'px';
       b.innerHTML = `${n}<span class="st"><i></i><i></i><i></i></span>`; b.setAttribute('aria-label', `Expedition ${n}`);
       const info = Q.levelInfo(n);
+      const relic = Q.RELICS[n];
+      if (relic) {
+        b.title = `First-clear prize: ${relic.name}`;
+        b.setAttribute('aria-label', `Expedition ${n} · ${relic.name} prize`);
+      }
       if (info.kind === 'collect') { const k = document.createElement('span'); k.className = 'kind'; k.dataset.t = info.ctype; b.appendChild(k); }
       b.onclick = () => { Snd.unlock(); if (n > P.unlocked) { Snd.play('nope'); U.say(`Expedition ${n} is still uncharted. Finish expedition ${P.unlocked} first!`, 2200, 'worried'); return; } Snd.play('tap'); U.showLevelStart(n); };
       path.appendChild(b); U.nodes[n] = b;
@@ -221,7 +226,7 @@ U.showIntro = () => Pop.show(() => ({ width: 460, outside: introDone, items: [
   sp(12),
   { k: 'eyebrow', text: 'Pengame Publishing · Puzzle Quest' },
   { k: 'title', text: 'Queen of the Seas', size: 32 },
-  T('Dive with marine biologist Dr. Janice Miller, the Queen of the Seas, on a deep sea odyssey through seven ocean habitats.', { size: 15 }),
+  T('Dive with marine biologist Dr. Janice Miller, the Queen of the Seas, on a deep sea odyssey through nine ocean habitats.', { size: 15 }),
   sp(4), T(RULES, { size: 13.5, weight: 700, color: '#5a4020' }),
   sp(14),
   btns([{ label: 'Begin the expedition', fn: introDone },
@@ -236,7 +241,7 @@ U.showLevelStart = (n) => Pop.show(() => {
     { k: 'title', text: `Expedition ${n}` },
     sp(4), prop,
     T(Q.goalText(L), { size: 20, weight: 900 }),
-    T(`in ${L.moves} moves${L.brick ? ' · staggered board' : ''}`, { size: 14, color: '#6b4a22' }),
+    T(`in ${L.moves} moves · ${L.boardSize}×${L.boardSize}${L.brick ? ' staggered' : ''} board`, { size: 14, color: '#6b4a22' }),
     best ? T(`Your best: ${'★'.repeat(best)}${'☆'.repeat(3 - best)}  ${Q.fmt(P.best[n] || 0)} points`, { size: 13, color: '#7a4c12' }) : sp(2),
     sp(14),
     btns([{ label: 'Dive in!', fn: () => { Pop.close(); U.startLevel(n); } }, { label: 'Back to the map', style: 'aqua', fn: () => Pop.close() }])
@@ -308,6 +313,15 @@ U.runPrizes = (list, then) => {
       T('Dr. Miller found it wedged between two coral heads.', { size: 13, color: '#5a4020' }),
       sp(14), btns([{ label: 'Collect', fn: next }])
     ] }));
+  } else if (p.k === 'relic') {
+    const relic = p.relic;
+    Pop.show(() => ({ items: [
+      { k: 'eyebrow', text: 'First-clear relic' },
+      { k: 'title', text: relic.name },
+      Q.props.chest(),
+      T(`+${relic.trident} Tridents · +${relic.amulet} Amulets · +${relic.pearls} pearls`, { size: 15, weight: 900, color: '#0a6d86' }),
+      sp(12), btns([{ label: 'Continue', fn: next }])
+    ] }));
   } else if (p.k === 'region') {
     const reg = Q.REGIONS[p.wi];
     mb?.event?.('habitat_restored', { region: p.wi + 1 });
@@ -351,12 +365,14 @@ U.showShop = () => Pop.show(() => {
 
 U.showLog = () => Pop.show(() => {
   const st = Q.totalStars(), rk = Q.rankIndex(st), nextR = Q.RANKS[rk + 1];
+  const relics = Object.entries(Q.RELICS).filter(([n]) => P.stars[n]).map(([, relic]) => relic.name);
   return { outside: true, items: [
     { k: 'image', src: 'assets/janice_portrait.webp', w: 140, ratio: 1, circle: true, focusY: 0.2 },
     sp(8), { k: 'eyebrow', text: 'Marine biologist · The Queen of the Seas' },
     { k: 'title', text: 'Dr. Janice Miller', size: 26 },
     T(`Your rank: ${Q.RANKS[rk][1]}${nextR ? ` (${nextR[0] - st} stars to ${nextR[1]})` : ''}`, { size: 14.5, weight: 900, color: '#0a6d86' }),
-    T(`${st} stars · ${Q.fmt(P.pearls)} pearls · ${P.restored.length} of 7 habitats restored · expedition ${Math.min(P.unlocked, Q.LEVELS)} of ${Q.LEVELS}`, { size: 13, color: '#3b2a14' }),
+    T(`${st} stars · ${Q.fmt(P.pearls)} pearls · ${P.restored.length} of ${Q.REGIONS.length} habitats restored · expedition ${Math.min(P.unlocked, Q.LEVELS)} of ${Q.LEVELS}`, { size: 13, color: '#3b2a14' }),
+    T(`Relics recovered: ${relics.length}/${Object.keys(Q.RELICS).length}${relics.length ? ' · ' + relics.join(', ') : ''}`, { size: 13, color: '#3b2a14' }),
     sp(4), T('"Every gem we bring home lets a little more light back into the sea. Shall we dive?"', { size: 13, color: '#5a4020' }),
     sp(12),
     btns([{ label: 'Game concept', fn: () => U.showConcept(0) }, { label: 'How to play', style: 'aqua', fn: () => U.showHowto() }], true),
@@ -365,11 +381,11 @@ U.showLog = () => Pop.show(() => {
 });
 
 const CONCEPT = [
-  ['The story', 'Queen of the Seas is a puzzle quest adventure based on the book Underwater Adventure: Deep Sea Odyssey. Marine biologist Dr. Janice Miller, the Queen of the Seas, follows a trail of glowing gems through seven ocean habitats that strange currents have dimmed. Every puzzle gathers the gems, pearls and compasses she needs to bring a habitat back to life.'],
+  ['The story', 'Queen of the Seas is a puzzle quest adventure based on the book Underwater Adventure: Deep Sea Odyssey. Marine biologist Dr. Janice Miller, the Queen of the Seas, follows a trail of glowing gems through nine ocean habitats that strange currents have dimmed. Every puzzle gathers the gems, pearls and compasses she needs to bring a habitat back to life.'],
   ['How a level plays', 'Swap two neighbouring pieces to line up three or more of a kind in a row or column. A square of four, an L, a T or a cross also counts. Each expedition sets a goal and a number of moves: reach a score, or collect a number of one kind of piece. Moves left at the end turn into bonus points and more stars.'],
   ['Pieces and powers', 'Five pieces: amethyst, emerald, sapphire, pearl and the gold compass. Four in a row makes a Tide gem that sweeps its row or column. An L or a T makes a Whirlpool. A square calls a Sea Turtle that swims to three pieces. Five in a row makes the Queen\'s Amulet, which clears every piece of one kind. Two powers swapped together make a bigger blast.'],
-  ['The expedition map', '105 expeditions in seven regions of 15: Coral Crown Bay, Seahorse Meadows, Sunken Observatory, Jellyfish Cathedral, Frozen Blue Frontier, Midnight Trench and the Crown of the Abyss. Every second expedition is played on a staggered board, every third is a collection dive, and each one asks for a little more.'],
-  ['Prizes and advancement', 'Each win earns up to three stars and pearls. Every 10 stars opens a treasure chest of Tridents, Amulets and pearls. The last expedition of a region restores its habitat and reveals a field note. Stars raise your rank from Reef Explorer to Coral Keeper, Tide Warden, Deep Sea Ranger, Ocean Sage, Abyssal Guardian and Queen\'s Champion. Pearls buy boosters in the treasure shop.'],
+  ['The expedition map', '135 expeditions across nine regions. The Shipwreck Vault and the Sapphire Passage add compact 7×7, wide 9×9 and staggered 8×8 boards. Every third expedition is a collection dive.'],
+  ['Prizes and advancement', 'Each win earns up to three stars and pearls. Every 10 stars opens a treasure chest of Tridents, Amulets and pearls. The last expedition of a region restores its habitat and reveals a field note. Stars raise your rank from Reef Explorer to Coral Keeper, Tide Warden, Deep Sea Ranger, Ocean Sage, Abyssal Guardian and Queen\'s Champion. Expeditions 110 through 135 award six collectible relics at five-level milestones. Pearls buy boosters in the treasure shop.'],
   ['Look and future chapters', 'Painted reefs, ruins and glowing caves behind gold and parchment frames; 3D gems that glint, burst into shards and bubbles, and pop-ups that rise from the deep. Ideas for later chapters: sand and fishing nets to clear, rescue missions for sea creatures, story scenes with Dr. Miller, a home reef to decorate and weekly ocean challenges.']
 ];
 U.showConcept = (i) => Pop.show(() => {
