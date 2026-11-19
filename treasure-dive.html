@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Treasure Dive | Queen of the Seas</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#042633;color:#f7f0da;font:16px system-ui,sans-serif}canvas{display:block;width:100%;height:100dvh;touch-action:none}section{position:absolute;top:0;left:0;max-width:min(440px,100%);padding:1rem 1.25rem;background:#062a37ee;border:1px solid #9a793e;border-radius:0 0 18px 0}h1{font:700 1.6rem Georgia;color:#ffda83;margin:.55rem 0}p{margin:.5rem 0}a{color:#9ee9e7}button{padding:.65rem .85rem;border-radius:8px;border:1px solid #e2bf67;background:#f6d985;color:#17282d;font:700 1rem system-ui;margin:.35rem .25rem .15rem 0;cursor:pointer}button:disabled{opacity:.55;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid white;outline-offset:3px}#status{font-size:.9rem;color:#bde7e9}
+</style>
+<section aria-label="Treasure dive controls">
+<a href="./">‹ Expedition map</a>
+<h1>Treasure Dive</h1>
+<p>Recover six relics in Dr. Miller’s underwater survey.</p>
+<p id="instructions">Click or tap a relic to recover it.</p>
+<button id="vr" disabled>Enter VR</button>
+<button id="ar" disabled>Enter AR</button>
+<button id="replay">Restart dive</button>
+<p id="count" aria-live="polite">Relics recovered 0 / 6</p>
+<p id="status" role="status">Checking for AR and VR support…</p>
+</section>
+<script src="https://mindblown.ai/lib/three-0.185.1-es2020/three.min.js"></script>
+<script src="treasure-dive.js?v=1"></script>
+</html>
