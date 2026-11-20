@@ -143,3 +143,35 @@ button:focus-visible,a:focus-visible{outline:3px solid #a4fff0;outline-offset:5p
 @media(prefers-reduced-motion:reduce){.node.current,.boost.armed{animation:none}.round,.boost,.voyage-nav,.node{transition:none}}
 @media(max-height:560px){.voyage-nav{min-height:36px;font-size:14px}.boost small{font-size:10px}.boost .cnt{min-width:21px;height:21px;line-height:19px}}
 body.land.onmap .voyage-nav{position:absolute;left:10px;bottom:80px;width:calc(38% - 20px);min-height:45px;z-index:2}
+/* Ocean Arcade and expanded tool shelf. */
+#shelf{gap:clamp(6px,2vw,14px)}
+#shelf::after{display:none}
+#shelf .janice{margin-right:4px}
+.challenge-nav{margin-top:8px;min-height:46px;background:linear-gradient(130deg,#493e83,#203f65 60%,#123047) padding-box,var(--metal) border-box;font-size:16px}
+body.land.onmap .challenge-nav{bottom:135px}
+.arc-overlay{position:fixed;inset:0;z-index:100;background:radial-gradient(ellipse at 50% 0%,#17506ae8,#020f20f5 75%);display:flex;justify-content:center;align-items:center;padding:12px;pointer-events:auto;touch-action:pan-y;backdrop-filter:blur(12px)}
+.arc-panel{width:min(100%,560px);max-height:96dvh;overflow:auto;background:linear-gradient(145deg,#133e53,#071d31);border:2px solid #d6b578;border-radius:22px;padding:18px;color:#edf7ee;box-shadow:inset 0 0 0 4px #061927,0 20px 70px #0009;overscroll-behavior:contain}
+.arc-head{display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:12px}
+.arc-head h2{font-family:Cinzel,serif;color:#f8dda3;font-size:23px;margin:0}
+.arc-close{border:1px solid #d6b578;border-radius:50%;background:#123a50;color:#ffe4ab;width:40px;height:40px;flex:none;font-size:27px}
+.arc-intro,.arc-note{color:#b5d6d9;font-size:13px;line-height:1.45}
+.arc-card{padding:14px 16px;background:linear-gradient(115deg,#24516c,#112d45);border:1px solid #749d9b66;border-radius:15px;margin:12px 0}
+.arc-card h3{color:#f7dc9f;margin:0;font-family:Cinzel,serif}.arc-card p{margin:7px 0;font-size:14px}
+.arc-meta{color:#b5eee1;font-size:13px}
+.arc-btn{border:2px solid transparent;border-radius:12px;background:linear-gradient(140deg,#2c857b,#105061) padding-box,var(--metal) border-box;box-shadow:inset 0 1px 0 #fff4,0 3px 0 #001927;color:#fff0ca;padding:10px 14px;min-height:44px;font-weight:900;font-size:14px;margin:3px}
+.arc-btn:active{transform:translateY(2px)}
+.arc-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px}.arc-status{font-size:14px;font-weight:900;color:#e7e6bc;font-variant-numeric:tabular-nums}
+.arc-surface{position:relative;margin:8px auto;text-align:center}
+.arc-blocks{display:block;width:auto;max-width:100%;height:min(53dvh,540px);margin:auto;border:2px solid #d8bd7f;border-radius:9px;box-shadow:0 8px 24px #0006;touch-action:none}
+.arc-next{margin:7px 0;font-size:13px;color:#d9e6ca}
+.arc-controls{display:flex;justify-content:center;gap:3px}.arc-controls .arc-btn{padding:9px 12px;flex:1;margin:0;font-size:13px}
+.arc-footer{text-align:center;margin-top:12px}.arc-medal{font-size:80px;color:#ffe19b;text-align:center;text-shadow:0 0 35px #4de6cf}
+.arc-paused::after{content:'PAUSED';position:absolute;inset:0;background:#05192af5;display:grid;place-items:center;border:1px solid #dbbe7a;border-radius:12px;color:#ffe4ae;font:900 26px Cinzel,serif;z-index:3}
+.arc-memory{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.arc-card-back{aspect-ratio:1.05;border-radius:14px;border:2px solid #d3b778;background:linear-gradient(130deg,#27647a,#0e2a49);color:#fff2bc;font-size:clamp(26px,7vw,40px);box-shadow:inset 0 0 0 4px #ffffff0b}
+.arc-card-back:disabled{opacity:.5;background:#24574d}
+.arc-sprint{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.arc-target{aspect-ratio:1;border:2px solid #38586d;border-radius:22px;background:#092237;color:#61718b;font-size:clamp(40px,10vw,70px)}
+.arc-target.is-pearl{background:radial-gradient(circle,#679a9b,#183f54);color:#ffefd9;text-shadow:0 0 18px #fff9;box-shadow:inset 0 0 0 2px #e2c893}
+@media(max-width:420px){#shelf .boost{width:56px;height:56px}#shelf .jface{width:46px;height:46px}#shelf{gap:clamp(5px,2vw,9px)}.arc-panel{padding:12px}.arc-head h2{font-size:20px}}
+@media(max-height:560px){.arc-overlay{align-items:flex-start}.arc-panel{max-height:95dvh}.arc-blocks{height:48dvh}.arc-controls{position:sticky;bottom:0;background:#071d31;padding:6px}.challenge-nav{min-height:36px}}

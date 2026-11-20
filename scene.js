@@ -238,6 +238,8 @@ function makeSet(clip) {
   const gem = (hex, extra = {}) => M({ color: hex, metalness: 0.23, roughness: 0.31, clearcoat: 0.24, clearcoatRoughness: 0.28, flatShading: true,
     emissive: hex, emissiveIntensity: 0.035, envMapIntensity: 0.7, specularIntensity: 0.32, ior: 1.6, ...extra });
   const set = {
+    creatures: Q.HEX.map(h => gem(h, {roughness:0.27,clearcoat:0.65})),
+    eye: M({color:0x052538,roughness:0.2},false),
     gem: [gem(0x7926ba, { iridescence: 0.15, iridescenceIOR: 1.5 }), gem(0x007c4e), gem(0x0755bf)],
     pearl: M({ color: 0xb8ada3, roughness: 0.3, metalness: 0, iridescence: 1, iridescenceIOR: 1.65, iridescenceThicknessRange: [180, 620],
       sheen: 0.6, sheenColor: new TH.Color(0xffd2ec), sheenRoughness: 0.4, clearcoat: 0.6, clearcoatRoughness: 0.12, envMapIntensity: 0.9 }),
@@ -277,7 +279,33 @@ function makeMaterials() {
 }
 
 // ---------- the pieces ----------
+// Shared geometry keeps the expanded creature set light enough for mobile boards.
+const creatureParts = {};
+function creatureMesh(t, M) {
+  if (!creatureParts[t]) {
+    const parts=[];
+    const ball=(x,y,z,sx,sy,sz,mat='body')=>parts.push({geo:G.sphere,p:[x,y,z],s:[sx,sy,sz],mat});
+    const tube=(points,r=.10)=>parts.push({geo:new TH.TubeGeometry(new TH.CatmullRomCurve3(points.map(p=>new TH.Vector3(...p))),16,r,6,false),p:[0,0,0],s:[1,1,1],mat:'body'});
+    const eyes=(y,spread=.20)=>{for(const x of [-spread,spread]){ball(x,y,.57,.13,.15,.07,'pearl');ball(x+.02,y,.66,.065,.08,.04,'eye');}};
+    if(t===5){parts.push({geo:G.star,p:[0,0,0],s:[.85,.85,.55],mat:'body'});eyes(.10,.17);}
+    if(t===6){
+      ball(0,.23,0,.83,.5,.30);ball(0,-.30,0,.83,.32,.36);ball(0,-.03,.38,.28,.28,.28,'pearl');
+      for(let i=-2;i<=2;i++)tube([[i*.10,-.07,.32],[i*.23,.28,.35],[i*.24,.62,.20]],.035);
+    }
+    if(t===7){ball(0,.35,0,.59,.64,.40);for(let i=0;i<8;i++){const x=(i-3.5)*.20;tube([[x*.6,-.13,0],[x,-.50,.1],[x*1.15,-.83,.22],[x*1.25,-.60,.35]],.10);}eyes(.34);}
+    if(t===8){ball(0,.25,0,.36,.76,.35);for(const sign of [-1,1]){const geo=new TH.ConeGeometry(.35,.8,3);parts.push({geo,p:[sign*.32,.44,-.1],s:[1,1,.4],mat:'body'});}for(let i=-2;i<=2;i++)tube([[i*.08,-.38,0],[i*.14,-.77,.1],[i*.20,-1,.2]],.06);eyes(.08,.14);}
+    if(t===9){ball(-.08,0,0,.73,.48,.32);parts.push({geo:new TH.ConeGeometry(.48,.65,3),p:[.76,0,0],s:[1,1,.65],mat:'body',rz:Math.PI/2});ball(-.40,.12,.34,.17,.18,.08,'pearl');ball(-.44,.12,.43,.08,.10,.04,'eye');tube([[-.10,.10,.34],[.14,-.08,.35],[0,-.22,.30]],.06);}
+    if(t===10){ball(.05,-.05,0,.28,.55,.25);ball(-.06,.57,0,.32,.31,.26);ball(-.38,.56,.02,.26,.12,.15);tube([[.09,-.42,0],[.28,-.80,0],[-.04,-.92,0],[-.32,-.68,0],[-.14,-.55,0]],.095);ball(-.14,.65,.25,.12,.13,.06,'pearl');ball(-.17,.65,.31,.06,.07,.03,'eye');for(let i=0;i<4;i++)ball(.27,.18-i*.16,-.04,.13,.10,.12);}
+    if(t===11)parts.push({geo:new TH.OctahedronGeometry(.94),p:[0,0,0],s:[.8,1,.65],mat:'body'});
+    if(t===12)parts.push({geo:new TH.DodecahedronGeometry(.9),p:[0,0,0],s:[1,1,.6],mat:'body'});
+    creatureParts[t]=parts;
+  }
+  const group=new TH.Group();
+  for(const p of creatureParts[t]){const m=new TH.Mesh(p.geo,p.mat==='body'?M.creatures[t]:M[p.mat]);m.position.set(...p.p);m.scale.set(...p.s);if(p.rz)m.rotation.z=p.rz;group.add(m);}
+  return group;
+}
 function gemMesh(t, M) {
+  if (t >= 5) return creatureMesh(t, M);
   if (t === 0) return new TH.Mesh(G.amethyst, M.gem[0]);
   if (t === 1) return new TH.Mesh(G.emerald, M.gem[1]);
   if (t === 2) return new TH.Mesh(G.sapphire, M.gem[2]);

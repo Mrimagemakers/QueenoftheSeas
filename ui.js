@@ -34,6 +34,8 @@ U.init = () => {
   $('bSound').onclick = () => { Snd.unlock(); Snd.set(!Snd.on); U.syncSound(); if (Snd.on) Snd.play('tap'); };
   $('btTrident').onclick = () => { Snd.unlock(); Snd.play('tap'); B.toggleBooster('trident'); };
   $('btAmulet').onclick = () => { Snd.unlock(); Snd.play('tap'); B.toggleBooster('amulet'); };
+  $('btChallenges').onclick = () => Q.Challenges.open();
+  $('btTools').onclick = () => U.showTools();
   $('btVoyage').onclick = () => { Snd.unlock(); U.showVoyage(); };
   $('btShop').onclick = () => { Snd.unlock(); Snd.play('tap'); U.showShop(); };
   Snd.listeners.push(() => U.syncSound()); U.syncSound();
@@ -148,12 +150,12 @@ U.buildMap = () => {
   Q.REGIONS.forEach((reg, wi) => {
     const sec = document.createElement('section'); sec.className = 'region'; sec.dataset.wi = wi;
     const head = document.createElement('div'); head.className = 'rhead'; head.dataset.bg = `assets/${reg.key}.webp`;
-    head.innerHTML = `<span class="rs"></span><div class="rt"><div class="rn">${String(wi + 1).padStart(2, '0')} · ${reg.name}</div><div class="rb">${reg.blurb} · Expeditions ${wi * Q.PER + 1} to ${(wi + 1) * Q.PER}</div></div>`;
+    head.innerHTML = `<span class="rs"></span><div class="rt"><div class="rn">${String(wi + 1).padStart(2, '0')} · ${reg.name}</div><div class="rb">${reg.blurb} · Expeditions ${wi * Q.PER + 1} to ${Math.min(Q.LEVELS, (wi + 1) * Q.PER)}</div></div>`;
     sec.appendChild(head);
     const path = document.createElement('div'); path.className = 'path'; const stepY = 66, top = 40;
-    path.style.height = (top * 2 + (Q.PER - 1) * stepY) + 'px';
+    path.style.height = (top * 2 + (Math.min(Q.PER, Q.LEVELS-wi*Q.PER) - 1) * stepY) + 'px';
     const pts = [];
-    for (let i = 0; i < Q.PER; i++) {
+    for (let i = 0; i < Math.min(Q.PER, Q.LEVELS-wi*Q.PER); i++) {
       const n = wi * Q.PER + i + 1; const xp = 50 + 30 * Math.sin(i * 0.9 + wi), yp = top + i * stepY; pts.push([xp, yp]);
       const b = document.createElement('button'); b.className = 'node'; b.style.left = xp + '%'; b.style.top = yp + 'px';
       b.innerHTML = `${n}<span class="st"><i></i><i></i><i></i></span>`; b.setAttribute('aria-label', `Expedition ${n}`);
@@ -227,7 +229,7 @@ U.showIntro = () => Pop.show(() => ({ width: 460, outside: introDone, items: [
   sp(12),
   { k: 'eyebrow', text: 'Pengame Publishing · Puzzle Quest' },
   { k: 'title', text: 'Queen of the Seas', size: 32 },
-  T('Dive with marine biologist Dr. Janice Miller, the Queen of the Seas, on a deep sea odyssey through nine ocean habitats.', { size: 15 }),
+  T('Dive with marine biologist Dr. Janice Miller, the Queen of the Seas, on a deep sea odyssey through 21 ocean habitats.', { size: 15 }),
   sp(4), T(RULES, { size: 13.5, weight: 700, color: '#5a4020' }),
   sp(14),
   btns([{ label: 'Begin the expedition', fn: introDone },
@@ -388,7 +390,23 @@ U.runPrizes = (list, then) => {
       T('Dr. Janice Miller', { size: 12, weight: 900, color: '#7a4c12' }),
       sp(12), btns([{ label: 'Thank you, Dr. Miller', fn: next }])
     ] }));
+  } else if (p.k === 'tool') {
+    Pop.show({items:[{k:'title',text:Q.TOOL_NAMES[p.key] + ' unlocked!'},
+      T('Three free tools added. Open Tools below the board to use them or trade pearls for more.'),sp(12),btns([{label:'Continue',fn:next}])]});
   } else U.runPrizes(list, then);
+};
+
+U.showTools = () => {
+  if (B.busy && B.running && !B.over) return;
+  return Pop.show(() => ({width:460,outside:true,items:[
+    {k:'eyebrow',text:`${Q.fmt(P.pearls)} pearls`},{k:'title',text:'Expedition Tools'},
+    ...Object.entries(Q.TOOL_UNLOCKS).flatMap(([key,level]) => {
+      const open = Q.toolUnlocked(key), cost = {bomb:80,torpedo:70,shuffle:50}[key];
+      return [T(`${Q.TOOL_NAMES[key]} · ${open ? (P.boost[key]||0)+' owned' : 'Unlock at level '+level}`,{size:16,weight:900}),
+        T({bomb:'Places a bomb that blasts a 3×3 area.',torpedo:'Places a torpedo that targets three pieces.',shuffle:'Rearranges gems into a playable board.'}[key],{size:12}),
+        btns([{label:'Use',style:'aqua',fn:open && P.boost[key]>0 && B.running && !B.over ? async()=>{await Pop.close();B.toggleBooster(key);} : null},
+          {label:cost+' pearls',fn:open && P.pearls>=cost && (P.boost[key]||0)<99 ? ()=>{P.pearls-=cost;P.boost[key]=(P.boost[key]||0)+1;Q.saveProgress();U.showTools();} : null}],true),sp(10)];
+    }),btns([{label:'Back',fn:()=>Pop.close()}])]}));
 };
 
 U.showShop = () => Pop.show(() => {
@@ -425,7 +443,7 @@ U.showLog = () => Pop.show(() => {
 });
 
 const CONCEPT = [
-  ['The story', 'Queen of the Seas is a puzzle quest adventure based on the book Underwater Adventure: Deep Sea Odyssey. Marine biologist Dr. Janice Miller, the Queen of the Seas, follows a trail of glowing gems through nine ocean habitats that strange currents have dimmed. Every puzzle gathers the gems, pearls and compasses she needs to bring a habitat back to life.'],
+  ['The story', 'Queen of the Seas is a puzzle quest adventure based on the book Underwater Adventure: Deep Sea Odyssey. Marine biologist Dr. Janice Miller, the Queen of the Seas, follows a trail of glowing gems through 21 ocean habitats that strange currents have dimmed. Every puzzle gathers the gems, pearls and compasses she needs to bring a habitat back to life.'],
   ['How a level plays', 'Swap two neighbouring pieces to line up three or more of a kind in a row or column. A square of four, an L, a T or a cross also counts. Each expedition sets a goal and a number of moves: reach a score, or collect a number of one kind of piece. Moves left at the end turn into bonus points and more stars.'],
   ['Pieces and powers', 'Five pieces: amethyst, emerald, sapphire, pearl and the gold compass. Four in a row makes a Tide gem that sweeps its row or column. An L or a T makes a Depth Bomb. A square creates a Turtle Torpedo that targets three pieces. Five in a row makes the Queen\'s Amulet, which clears every piece of one kind. Two powers swapped together make a bigger blast.'],
   ['The expedition map', '135 expeditions across nine regions. The Shipwreck Vault and the Sapphire Passage add compact 7×7, wide 9×9 and staggered 8×8 boards. Every third expedition is a collection dive.'],

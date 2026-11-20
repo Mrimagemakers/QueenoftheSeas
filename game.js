@@ -94,5 +94,18 @@ async function boot() {
   if (!Q.P.introSeen && !Pop.open && U.screen === 'map') U.showIntro();
   else setTimeout(() => { if (U.screen === 'map' && !Pop.open) U.say('Pick the glowing expedition and let\'s dive!', 3000, 'cheer'); }, 900);
 }
-boot().catch(e => { console.error(e); const b = $('boot'); if (b) b.querySelector('.sub').textContent = 'Something went wrong loading the ocean. Please reload.'; });
+boot().catch(async e => {
+  console.error(e);
+  await Q.loadProgress();
+  const b = $('boot');
+  if (b) {
+    b.classList.remove('gone');
+    b.querySelector('.sub').textContent = 'The 3D ocean could not start on this device.';
+    b.querySelector('.sub').style.cssText = 'letter-spacing:normal;text-align:center;max-width:85%;margin:18px 0';
+    const arcade = document.createElement('button'); arcade.className = 'arc-btn'; arcade.textContent = 'Play Ocean Arcade';
+    arcade.onclick = () => Q.Challenges.open(); b.append(arcade);
+    const retry = document.createElement('button'); retry.className = 'arc-btn'; retry.textContent = 'Retry the 3D ocean';
+    retry.onclick = () => location.reload(); b.append(retry);
+  }
+});
 })();

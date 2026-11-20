@@ -128,6 +128,7 @@ B.begin = (info) => {
   Q.U.syncGoal(); Q.U.refreshBoosters();
   Q.U.say(info.kind === 'collect' ? `Collect ${info.count} ${Q.PLURAL[info.ctype]} in ${info.moves} moves! Line up three or more.` : `Reach ${Q.fmt(info.target)} points in ${info.moves} moves! Line up three or more.`, 3800, 'point');
 };
+B.randomType = () => { const palette = B.level?.palette || [0,1,2,3,4]; return palette[Q.rnd(palette.length)]; };
 B.fillFresh = () => {
   let tries = 0;
   do {
@@ -135,7 +136,7 @@ B.fillFresh = () => {
     for (let r = 0; r < N; r++) { B.grid[r] = []; for (let c = 0; c < N; c++) {
       if (!B.active(r, c)) { B.grid[r][c] = null; continue; }
       let t, k = 0;
-      do { t = Q.rnd(Q.TYPES); k++; }
+      do { t = B.randomType(); k++; }
       while (k < 40 && ((c >= 2 && B.grid[r][c - 1]?.t === t && B.grid[r][c - 2]?.t === t) || (r >= 2 && B.grid[r - 1][c]?.t === t && B.grid[r - 2][c]?.t === t)
         || (r >= 1 && c >= 1 && B.grid[r - 1][c]?.t === t && B.grid[r][c - 1]?.t === t && B.grid[r - 1][c - 1]?.t === t)));
       B.grid[r][c] = { t, sp: null };
@@ -552,7 +553,7 @@ B.gravity = async (cascade = 1) => {
     const missing = rows.length - cells.length;
     rows.forEach((r, i) => {
       const entry = cells[i - missing];
-      const cell = entry ? entry.cell : {t: Q.rnd(Q.TYPES), sp: null};
+      const cell = entry ? entry.cell : {t: B.randomType(), sp: null};
       G[r][c] = cell;
       const node = entry ? cell.node : B.makeNode(cell, r, c, cs * N);
       if (!entry || entry.from !== r) falls.push(Q.game.to(node.position, {y: B.Y(r, c), z: 0}, 130 + per * Math.sqrt(N), {ease: E.outBack}));
@@ -567,18 +568,23 @@ B.toggleBooster = (key) => {
   if (!B.visible || B.over) { Q.U.say('Boosters are used inside an expedition. Pick a level on the map!', 2400); return; }
   B.lastInput = Date.now();
   if (!B.canPlay() && B.armed !== key) return;
+  if (Q.TOOL_UNLOCKS[key] && !Q.toolUnlocked(key)) return;
   if ((Q.P.boost[key] || 0) <= 0) { Q.U.say(`No ${key === 'trident' ? 'tridents' : 'amulets'} left. Trade pearls for more in the treasure shop!`, 2400); return; }
   B.deselect();
   if (B.armed === key) { B.armed = null; Q.U.say('Booster put away.', 900); }
   else { B.armed = key; Q.U.say(key === 'trident' ? 'Tap any row and the trident clears it!' : 'Tap a piece to turn it into the Queen\'s Amulet!', 2600, 'point'); }
+  if (B.armed && Q.TOOL_UNLOCKS[key]) Q.U.say(key === 'shuffle' ? 'Tap the board to shuffle the current without spending a move.' : 'Tap a gem to place your ' + Q.TOOL_NAMES[key] + '.', 2600);
   Q.U.refreshBoosters();
 };
 B.useBooster = async (key, at) => {
+  if (!B.canPlay() || !B.grid[at.r]?.[at.c] || !(Q.P.boost[key]>0) || (Q.TOOL_UNLOCKS[key] && !Q.toolUnlocked(key))) return;
   B.armed = null; Q.P.boost[key] = Math.max(0, (Q.P.boost[key] || 0) - 1); Q.saveProgress(); Q.U.refreshBoosters();
   B.busy = true; B.lastInput = Date.now();
   const G = B.grid, cs = B.cs;
   mb?.event?.('booster_used', { kind: key, level: B.level.n });
-  if (key === 'trident') {
+  if (key === 'shuffle') {
+    await B.shuffle();
+  } else if (key === 'trident') {
     Snd.play('whoosh', { vol: 1, rate: 0.9 });
     const tr = S.trident(); tr.scale.setScalar(cs * 0.7); tr.rotation.z = -Math.PI / 2;
     const y = B.Y(at.r, 0); tr.position.set(B.X(0) - cs * 2, y, 150); S.fxRoot.add(tr);
@@ -591,11 +597,11 @@ B.useBooster = async (key, at) => {
   } else {
     const cell = G[at.r][at.c];
     Snd.play('chime', { rate: 1.2, vol: 0.9 });
-    cell.sp = 'b'; cell.t = -1;
+    cell.sp = key === 'bomb' ? 'w' : key === 'torpedo' ? 'q' : 'b'; if (cell.sp === 'b') cell.t = -1;
     const nd = B.reskin(cell), base = nd.userData.base; nd.scale.setScalar(0.001);
     S.ring(nd.position.x, nd.position.y, 100, cs * 2.4, 0x9ff8ff, 420); S.glow(nd.position.x, nd.position.y, 90, cs * 3, 0x5ff0ff, 500);
     await Q.game.add(320, (e) => nd.scale.setScalar(base * Math.max(0.001, e)), { ease: E.outBackBig });
-    Q.U.say('Swap the amulet with any piece!', 1800);
+    Q.U.say('Tap your weapon to fire, or combine it with another weapon!', 1800);
   }
   await B.gravity(1);
   await B.resolve(null);
@@ -622,7 +628,7 @@ B.shuffle = async () => {
     for (let i = 0; i < cells.length; i++) G[positions[i].r][positions[i].c] = cells[i];
   } while ((B.findGroups().length || !B.findMove()) && ++tries < 200);
   if (tries >= 200) {
-    for (const c of cells) if (!c.sp) { c.t = Q.rnd(Q.TYPES); B.reskin(c); }
+    for (const c of cells) if (!c.sp) { c.t = B.randomType(); B.reskin(c); }
     if (B.findGroups().length || !B.findMove()) return B.shuffle();
   }
   Snd.play('swap', { rate: 0.8 });
@@ -656,6 +662,10 @@ B.win = async () => {
   const pearls = (firstClear ? 20 : 5) + gainedStars * 10;
   P.pearls += pearls;
   const prizes = [];
+  if (firstClear) for (const [key, level] of Object.entries(Q.TOOL_UNLOCKS)) if (L.n === level - 1) {
+    P.boost[key] = Math.min(99, (P.boost[key] || 0) + 3);
+    prizes.push({k:'tool',key});
+  }
   const relic = Q.RELICS[L.n];
   if (firstClear && relic) {
     P.pearls += relic.pearls;

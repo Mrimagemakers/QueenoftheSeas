@@ -4,7 +4,7 @@
 const mb = window.mindblown;
 const Q = window.QOS = {};
 
-Q.N = 8; Q.TYPES = 5;
+Q.N = 8; Q.TYPES = 13;
 Q.NAMES = ['amethyst', 'emerald', 'sapphire', 'pearl', 'gold compass'];
 Q.PLURAL = ['amethysts', 'emeralds', 'sapphires', 'pearls', 'gold compasses'];
 Q.HEX = [0xa45cff, 0x18c97f, 0x2f6dff, 0xf4eee4, 0xe2b04a];
@@ -12,6 +12,10 @@ Q.CSS = ['#b980ff', '#38e09a', '#6a9bff', '#f4efe6', '#f0c35a'];
 Q.fmt = (n) => Math.round(n).toLocaleString('en-US');
 Q.clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 Q.rnd = (n) => Math.floor(Math.random() * n);
+Q.NAMES.push('starfish', 'clam', 'octopus', 'squid', 'reef fish', 'seahorse', 'ruby', 'sunstone');
+Q.PLURAL.push('starfish', 'clams', 'octopuses', 'squid', 'reef fish', 'seahorses', 'rubies', 'sunstones');
+Q.HEX.push(0xff9262, 0xefb5de, 0xce6fdd, 0x67d4e6, 0xffb73d, 0x50dbb7, 0xe93167, 0xffcf57);
+Q.CSS.push('#ff9262','#efb5de','#ce6fdd','#67d4e6','#ffb73d','#50dbb7','#ff648e','#ffcf57');
 Q.T = {};
 
 Q.REGIONS = [
@@ -34,7 +38,14 @@ Q.REGIONS = [
   { key: 'bg_midnight_trench', name: 'The Sapphire Passage', blurb: 'Cross the deep passage to recover the Queen’s lost regalia',
     note: ['The last beacon', 'Dr. Miller marks a safe route through the passage so the next crew can find its way home.'] }
 ];
-Q.PER = 15; Q.LEVELS = Q.REGIONS.length * Q.PER;
+const moreRegions = ['Starfish Shoals','Clam Palace','Octopus Gardens','Squid Lagoon','Rainbow Reef','Seahorse Nursery','Ruby Caverns','Sunstone Atoll','Crystal Maelstrom','Leviathan Passage','Imperial Reef','The Final Crown'];
+moreRegions.forEach((name, i) => Q.REGIONS.push({key: Q.REGIONS[i % 7].key, name,
+  blurb: 'New creatures, ancient jewels and deeper-water challenges',
+  note: [name, 'Dr. Miller charts another habitat and records its creatures in the expedition log.']}));
+Q.PER = 15; Q.LEVELS = 302;
+Q.TOOL_UNLOCKS = {bomb:16, torpedo:46, shuffle:91};
+Q.TOOL_NAMES = {bomb:'Depth Bomb', torpedo:'Turtle Torpedo', shuffle:'Current Shuffle'};
+Q.toolUnlocked = key => Q.P.unlocked >= Q.TOOL_UNLOCKS[key];
 
 Q.RANKS = [[0, 'Reef Explorer'], [12, 'Coral Keeper'], [35, 'Tide Warden'], [70, 'Deep Sea Ranger'], [120, 'Ocean Sage'], [190, 'Abyssal Guardian'], [270, "Queen's Champion"]];
 Q.rankIndex = (stars) => { let i = 0; Q.RANKS.forEach((r, k) => { if (stars >= r[0]) i = k; }); return i; };
@@ -48,6 +59,11 @@ Q.RELICS = {
   135: { name: 'Crown of the Deep', pearls: 500, trident: 3, amulet: 3 }
 };
 
+for (let n = 150; n <= 300; n += 15) Q.RELICS[n] = {
+  name: ['Starfish Medallion','Clam Pearl','Octopus Signet','Squid Lantern','Reef Jewel','Seahorse Crest','Ruby Scepter','Sunstone Crown','Crystal Compass','Leviathan Seal','Imperial Trident'][(n-150)/15],
+  pearls: 250 + Math.floor((n-135)/15)*50, trident: 2, amulet: 2
+};
+Q.RELICS[302] = {name:'Crown of the Living Ocean',pearls:1500,trident:5,amulet:5};
 Q.levelInfo = (n) => {
   const T = Q.T;
   n = Q.clamp(Math.round(n) || 1, 1, Q.LEVELS);
@@ -71,6 +87,20 @@ Q.levelInfo = (n) => {
     info.target = Math.round(info.target * 0.72 / 100) * 100;
     info.star2 = Math.round(info.target * 1.35); info.star3 = Math.round(info.target * 1.7);
   }
+  // A rotating palette introduces new creatures without flooding a board with 13 types.
+  const available = Math.min(Q.TYPES, 5 + Math.floor((n - 1) / 15));
+  const count = n < 136 ? 5 : n < 226 ? 6 : 7;
+  info.palette = Array.from({length: Math.min(available, count)}, (_, i) => (i + Math.floor((n-1)/5)) % available);
+  if (collect) info.ctype = info.palette[(n + wi) % info.palette.length];
+  if (n > 135) {
+    const tier = Math.floor((n - 136) / 30);
+    info.moves = Math.max(17, 28 - tier * 2);
+    const areaScale = info.shape === 'rectangle' ? 1 : 0.78;
+    info.target = Math.round((4200 + (n - 136) * 32) * areaScale / 100) * 100;
+    info.star2 = Math.round(info.target * 1.35); info.star3 = Math.round(info.target * 1.7);
+    if (collect) info.count = 14 + tier * 3;
+  }
+  info.last = n % Q.PER === 0 || n === Q.LEVELS;
   return info;
 };
 Q.activeCell = (L, r, c) => {
@@ -85,12 +115,12 @@ Q.goalText = (L) => L.kind === 'collect' ? `Collect ${L.count} ${Q.PLURAL[L.ctyp
 
 // ---------- progress ----------
 const KEY = 'progress';
-const P = Q.P = { schemaVersion: 2, voyage: { wins: 0, streak: 0, bestStreak: 0, claimed: [] }, unlocked: 1, stars: {}, best: {}, pearls: 0, boost: { trident: 3, amulet: 2 }, chests: 0, restored: [], rankSeen: 0, introSeen: false };
+const P = Q.P = { schemaVersion: 3, challenges: {}, voyage: { wins: 0, streak: 0, bestStreak: 0, claimed: [] }, unlocked: 1, stars: {}, best: {}, pearls: 0, boost: { trident: 3, amulet: 2, bomb:0, torpedo:0, shuffle:0 }, chests: 0, restored: [], rankSeen: 0, introSeen: false };
 Q.progress = { ready: false, scope: 'browser', listeners: [] };
 function clean(v) {
   const T = Q.T;
-  const out = { schemaVersion: 2, voyage: { wins: 0, streak: 0, bestStreak: 0, claimed: [] }, unlocked: 1, stars: {}, best: {}, pearls: T.pearls ?? 100,
-    boost: { trident: T.rockets ?? 3, amulet: T.bombs ?? 2 }, chests: 0, restored: [], rankSeen: 0, introSeen: false };
+  const out = { schemaVersion: 3, challenges: {}, voyage: { wins: 0, streak: 0, bestStreak: 0, claimed: [] }, unlocked: 1, stars: {}, best: {}, pearls: T.pearls ?? 100,
+    boost: { trident: T.rockets ?? 3, amulet: T.bombs ?? 2, bomb:0, torpedo:0, shuffle:0 }, chests: 0, restored: [], rankSeen: 0, introSeen: false };
   if (v && typeof v === 'object') {
     if (typeof v.unlocked === 'number') out.unlocked = Q.clamp(Math.round(v.unlocked), 1, Q.LEVELS + 1);
     if (v.stars && typeof v.stars === 'object') for (const k in v.stars) { const n = +k; if (n >= 1 && n <= Q.LEVELS) out.stars[n] = Q.clamp(Math.round(v.stars[k]) || 0, 0, 3); }
@@ -99,6 +129,11 @@ function clean(v) {
     if (v.boost && typeof v.boost === 'object') {
       if (typeof v.boost.trident === 'number') out.boost.trident = Q.clamp(Math.round(v.boost.trident), 0, 99);
       if (typeof v.boost.amulet === 'number') out.boost.amulet = Q.clamp(Math.round(v.boost.amulet), 0, 99);
+    }
+    for (const key of Object.keys(Q.TOOL_UNLOCKS)) out.boost[key] = Q.clamp(Math.floor(Number(v.boost?.[key])) || 0, 0, 99);
+    for (const key of ['blocks','memory','sprint']) {
+      const a = v.challenges?.[key];
+      if (a) out.challenges[key] = {tier:Q.clamp(Math.floor(Number(a.tier))||0,0,3),best:Q.clamp(Math.floor(Number(a.best))||0,0,10000000)};
     }
     if (typeof v.chests === 'number') out.chests = Math.max(0, Math.round(v.chests));
     if (Array.isArray(v.restored)) out.restored = [...new Set(v.restored.filter(i => Number.isInteger(i) && i >= 0 && i < Q.REGIONS.length))];
@@ -114,6 +149,11 @@ function clean(v) {
 function apply(v, replace) {
   const c = clean(v);
   if (replace) { Object.assign(P, c); return; }
+  for (const key of Object.keys(Q.TOOL_UNLOCKS)) P.boost[key] = Math.max(P.boost[key] || 0, c.boost[key] || 0);
+  for (const key of ['blocks','memory','sprint']) {
+    const a = P.challenges[key] || {}, b = c.challenges[key] || {};
+    P.challenges[key] = {tier:Math.max(a.tier||0,b.tier||0), best:Math.max(a.best||0,b.best||0)};
+  }
   P.voyage.wins = Math.max(P.voyage.wins, c.voyage.wins);
   P.voyage.bestStreak = Math.max(P.voyage.bestStreak, c.voyage.bestStreak);
   P.voyage.claimed = [...new Set([...P.voyage.claimed, ...c.voyage.claimed])];
