@@ -318,8 +318,8 @@ Q.props = {
   chest(onOpen) {
     return { k: 'prop', h: 150, make(s, w, h, up) {
       const g = new TH.Group(); const k = 46 * s;
-      const wood = new TH.MeshStandardMaterial({ color: 0x8a4f22, roughness: 0.6, metalness: 0.05 });
-      const woodIn = new TH.MeshStandardMaterial({ color: 0x3a200e, roughness: 0.9 });
+      const wood = new TH.MeshStandardMaterial({ color: 0x124c64, roughness: 0.28, metalness: 0.55 });
+      const woodIn = new TH.MeshStandardMaterial({ color: 0x071d31, roughness: 0.8 });
       const gold = S.MF.gold;
       const base = new TH.Group(); g.add(base);
       const box = new TH.Mesh(new TH.BoxGeometry(2.2, 1.2, 1.4), wood); box.position.y = -0.2; base.add(box);
@@ -327,12 +327,35 @@ Q.props = {
       for (const x of [-0.85, 0.85]) { const band = new TH.Mesh(new TH.BoxGeometry(0.16, 1.26, 1.46), gold); band.position.set(x, -0.2, 0); base.add(band); }
       const trim = new TH.Mesh(new TH.BoxGeometry(2.26, 0.12, 1.46), gold); trim.position.y = 0.38; base.add(trim);
       const lock = new TH.Mesh(new TH.BoxGeometry(0.34, 0.42, 0.1), gold); lock.position.set(0, 0.12, 0.74); base.add(lock);
+      // Raised panels, gold feet and individually set rivets.
+      const inset = new TH.MeshStandardMaterial({color: 0x082d47, metalness: 0.45, roughness: 0.3});
+      for (const x of [-0.46, 0.46]) {
+        const panel = new TH.Mesh(new TH.BoxGeometry(0.62, 0.72, 0.06), inset); panel.position.set(x,-0.18,0.73); base.add(panel);
+      }
+      for (const x of [-0.92,0.92]) for (const z of [-0.54,0.54]) {
+        const foot = new TH.Mesh(new TH.BoxGeometry(0.3,0.22,0.3),gold); foot.position.set(x,-0.87,z);base.add(foot);
+      }
+      const rivetGeo = new TH.SphereGeometry(0.055,10,8);
+      for (const x of [-0.85,0.85]) for (const y of [-0.65,-0.28,0.1,0.33]) {
+        const rivet = new TH.Mesh(rivetGeo,gold); rivet.position.set(x,y,0.76);base.add(rivet);
+      }
+      const jewel = new TH.Mesh(new TH.OctahedronGeometry(0.21),S.MF.aqua);jewel.position.set(0,0.08,0.84);base.add(jewel);
+      const clasp = new TH.Mesh(new TH.TorusGeometry(0.25,0.045,8,24),gold);clasp.position.set(0,0.08,0.82);base.add(clasp);
+      const coins = new TH.Group(); coins.position.set(0,0.43,0);g.add(coins);
+      const coinGeo = new TH.CylinderGeometry(0.14,0.14,0.045,16);
+      for(let i=0;i<24;i++) {
+        const coin = new TH.Mesh(coinGeo,gold); coin.position.set(((i*7)%11-5)*0.16,Math.floor(i/8)*0.045,((i*3)%7-3)*0.14);coins.add(coin);
+      }
       const hinge = new TH.Group(); hinge.position.set(0, 0.42, -0.7); g.add(hinge);
       const lidGeo = new TH.BoxGeometry(2.2, 0.5, 1.4); lidGeo.translate(0, 0.25, 0.7);
       hinge.add(new TH.Mesh(lidGeo, wood));
       const dome = new TH.CylinderGeometry(0.7, 0.7, 2.2, 20, 1, false, 0, Math.PI); dome.rotateZ(Math.PI / 2); dome.scale(1, 0.5, 1); dome.translate(0, 0.5, 0.7);
       const domeM = new TH.Mesh(dome, wood); hinge.add(domeM);
       for (const x of [-0.85, 0.85]) { const b = new TH.Mesh(new TH.BoxGeometry(0.16, 0.56, 1.46), gold); b.geometry.translate(x, 0.25, 0.7); hinge.add(b); }
+      for(const x of [-0.85,0.85]) for(const y of [0.07,0.43]) {
+        const rivet = new TH.Mesh(rivetGeo,gold);rivet.position.set(x,y,1.44);hinge.add(rivet);
+      }
+      const crest = new TH.Mesh(new TH.OctahedronGeometry(0.17),S.MF.aqua);crest.position.set(0,0.55,1.08);hinge.add(crest);
       const lidLock = new TH.Mesh(new TH.BoxGeometry(0.3, 0.3, 0.1), gold); lidLock.position.set(0, 0.15, 1.42); hinge.add(lidLock);
       const light = new TH.PointLight(0xffe7a0, 0, 0, 0); light.position.set(0, 0.6 * k, 0.6 * k); g.add(light);
       g.scale.setScalar(k); g.rotation.x = 0.35; g.rotation.y = -0.35; g.position.y = -14 * s;
@@ -342,7 +365,7 @@ Q.props = {
         if (!opened && el < 900) { g.rotation.z = Math.sin(el * 0.05) * 0.05 * (el / 900); }
         if (!opened && el >= 900) {
           opened = true; g.rotation.z = 0; Q.Snd.play('chest');
-          Q.ui.add(520, (e) => { hinge.rotation.x = -1.9 * e; light.intensity = 2.5 * e; }, { ease: E.outBack });
+          Q.ui.add(520, (e) => { hinge.rotation.x = -1.9 * e; light.intensity = 4 * e; }, { ease: E.outBack });
           const wp = new TH.Vector3();
           for (let i = 0; i < 14; i++) {
             const tt = i % 5, n = S.makePiece(tt, null, false); n.scale.setScalar(0.22); n.position.set(0, 0.4, 0); g.add(n);

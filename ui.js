@@ -219,7 +219,7 @@ U.resume = () => { Pop.close(); U.unpauseClock(); };
 const T = (text, o = {}) => ({ k: 'text', text, ...o });
 const sp = (h) => ({ k: 'space', h });
 const btns = (list, row) => ({ k: 'buttons', list, row });
-const RULES = 'Swipe a piece onto its neighbour, or tap two neighbours, to swap them. Line up three or more of a kind in a row or column. A square of four, an L, a T or a cross counts too.';
+const RULES = 'Swipe a piece onto its neighbour, or tap two neighbours, to swap them. Line up three or more of a kind in a row or column. A 2x2 square creates a Turtle Torpedo. An L or T creates a Depth Bomb. Five in a line creates the Queen’s Amulet. Tap a weapon to fire, or swap weapons to combine them.';
 
 const introDone = () => { P.introSeen = true; Q.saveProgress(); Pop.close(); U.say('Welcome aboard! Pick the glowing expedition on the map.', 3200, 'cheer'); };
 U.showIntro = () => Pop.show(() => ({ width: 460, outside: introDone, items: [
@@ -308,8 +308,8 @@ U.showHowto = () => Pop.show(() => ({ width: 470, outside: true, items: [
   { k: 'title', text: 'How to play', size: 28 },
   T(RULES, { size: 14 }),
   sp(6),
-  Q.props.pieces([[2, 'h'], [1, 'w'], [3, 'q'], [0, 'b']], { h: 66, size: 25, captions: ['Tide|4 in a row', 'Whirlpool|L or T', 'Sea Turtle|2x2 square', 'Amulet|5 in a row'] }),
-  T('A Tide sweeps its row or column. A Whirlpool clears the pieces around it. A Sea Turtle swims to three pieces. The Queen\'s Amulet clears every piece of one kind. Swap two powers together for a bigger splash.', { size: 13, color: '#5a4020' }),
+  Q.props.pieces([[2, 'h'], [1, 'w'], [3, 'q'], [0, 'b']], { h: 66, size: 25, captions: ['Tide|4 in a row', 'Depth Bomb|L or T', 'Turtle Torpedo|2x2 square', 'Amulet|5 in a row'] }),
+  T('A Tide sweeps its row or column. A Depth Bomb blasts a 3x3 area. Tap a weapon to fire it using one move, or swap it with a neighbour. A Turtle Torpedo targets three pieces. The Queen\'s Amulet clears every piece of one kind. Swap two powers together for a bigger splash.', { size: 13, color: '#5a4020' }),
   sp(4),
   T('Tap the Trident or the Amulet on the shelf to use a booster. Win expeditions for stars and pearls; every 10 stars opens a treasure chest.', { size: 13, color: '#5a4020' }),
   sp(12),
@@ -427,7 +427,7 @@ U.showLog = () => Pop.show(() => {
 const CONCEPT = [
   ['The story', 'Queen of the Seas is a puzzle quest adventure based on the book Underwater Adventure: Deep Sea Odyssey. Marine biologist Dr. Janice Miller, the Queen of the Seas, follows a trail of glowing gems through nine ocean habitats that strange currents have dimmed. Every puzzle gathers the gems, pearls and compasses she needs to bring a habitat back to life.'],
   ['How a level plays', 'Swap two neighbouring pieces to line up three or more of a kind in a row or column. A square of four, an L, a T or a cross also counts. Each expedition sets a goal and a number of moves: reach a score, or collect a number of one kind of piece. Moves left at the end turn into bonus points and more stars.'],
-  ['Pieces and powers', 'Five pieces: amethyst, emerald, sapphire, pearl and the gold compass. Four in a row makes a Tide gem that sweeps its row or column. An L or a T makes a Whirlpool. A square calls a Sea Turtle that swims to three pieces. Five in a row makes the Queen\'s Amulet, which clears every piece of one kind. Two powers swapped together make a bigger blast.'],
+  ['Pieces and powers', 'Five pieces: amethyst, emerald, sapphire, pearl and the gold compass. Four in a row makes a Tide gem that sweeps its row or column. An L or a T makes a Depth Bomb. A square creates a Turtle Torpedo that targets three pieces. Five in a row makes the Queen\'s Amulet, which clears every piece of one kind. Two powers swapped together make a bigger blast.'],
   ['The expedition map', '135 expeditions across nine regions. The Shipwreck Vault and the Sapphire Passage add compact 7×7, wide 9×9 and staggered 8×8 boards. Every third expedition is a collection dive.'],
   ['Prizes and advancement', 'Each win earns up to three stars and pearls. Every 10 stars opens a treasure chest of Tridents, Amulets and pearls. The last expedition of a region restores its habitat and reveals a field note. Stars raise your rank from Reef Explorer to Coral Keeper, Tide Warden, Deep Sea Ranger, Ocean Sage, Abyssal Guardian and Queen\'s Champion. Expeditions 110 through 135 award six collectible relics at five-level milestones. Pearls buy boosters in the treasure shop.'],
   ['Look and future chapters', 'Painted reefs, ruins and glowing caves behind gold and parchment frames; 3D gems that glint, burst into shards and bubbles, and pop-ups that rise from the deep. Ideas for later chapters: sand and fishing nets to clear, rescue missions for sea creatures, story scenes with Dr. Miller, a home reef to decorate and weekly ocean challenges.']

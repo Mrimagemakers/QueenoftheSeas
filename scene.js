@@ -313,6 +313,13 @@ S.makePiece = (t, sp, onBoard = true) => {
   const node = new TH.Group(), body = new TH.Group(); node.add(body);
   const ud = node.userData = { body, t, sp, phase: Math.random() * 6.28 };
   if (sp === 'b') { body.add(amuletMesh(M)); }
+  else if (sp === 'w') {
+    const bomb = new TH.Mesh(G.sphere, M.goldDark); bomb.scale.setScalar(0.75); body.add(bomb);
+    const band = new TH.Mesh(G.loop, M.gold); band.scale.set(4.7, 4.7, 2); band.position.z = 0.35; body.add(band);
+    const core = new TH.Mesh(G.sphere, M.aqua); core.scale.setScalar(0.28); core.position.z = 0.78; body.add(core);
+    const fuse = new TH.Mesh(G.loop, M.gold); fuse.position.set(0, 0.89, 0); body.add(fuse);
+    const spark = new TH.Mesh(G.sphere, M.aqua); spark.scale.setScalar(0.11); spark.position.set(0.12,1.06,0); body.add(spark); ud.fuse = spark;
+  }
   else if (sp === 'q') {
     const halo = new TH.Mesh(G.halo, M.halo[t]); halo.position.z = -0.3; body.add(halo);
     const tt = turtleMesh(M, onBoard ? 'board' : 'free'); tt.scale.setScalar(0.95); body.add(tt); ud.turtle = tt;
@@ -341,6 +348,7 @@ S.animatePiece = (node, t, sel) => {
   if (u.gem?.userData?.needle) u.gem.userData.needle.rotation.z = Math.sin(t * 0.0013 + u.phase) * 0.5 + (sel ? t * 0.006 : 0);
   if (u.fx && (u.sp === 'h' || u.sp === 'v')) { const p = 0.5 + 0.5 * Math.sin(t * 0.006 + u.phase); u.fx.children.forEach((c, i) => { if (i) c.position.x = (i === 1 ? -1 : 1) * (1.02 + p * 0.16); }); }
   if (u.spiral) u.spiral.rotation.z = -t * 0.004;
+  if (u.fuse) u.fuse.scale.setScalar(0.1 + 0.035 * Math.sin(t * 0.012));
   if (u.sp === 'b') { const g = b.children[0]?.userData.glow; if (g) g.material.opacity = 0.5 + 0.3 * Math.sin(t * 0.004 + u.phase); b.rotation.z = Math.sin(t * 0.0011 + u.phase) * 0.12; }
   if (u.turtle) { u.turtle.rotation.z = Math.sin(t * 0.0016 + u.phase) * 0.22; u.turtle.position.y = Math.sin(t * 0.003 + u.phase) * 0.05; }
 };

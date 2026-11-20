@@ -181,7 +181,10 @@ B.move = (x, y) => {
 };
 B.up = (x, y) => {
   const d = B.drag; B.drag = null;
-  if (d && !d.fresh && B.sel && Math.hypot(x - d.x, y - d.y) < B.cs * 0.3) B.deselect();
+  if (d && B.sel && Math.hypot(x - d.x, y - d.y) < B.cs * 0.3) {
+    if (B.canPlay() && B.grid[d.at.r]?.[d.at.c]?.sp) { B.deselect(); B.activate(d.at); }
+    else if (!d.fresh) B.deselect();
+  }
 };
 B.select = (at) => {
   B.deselect();
@@ -234,7 +237,7 @@ B.findMove = () => {
   const test = (a, b) => {
     const A = G[a.r][a.c], Bc = G[b.r][b.c];
     if (!A || !Bc) return false;
-    if (A.sp === 'b' || Bc.sp === 'b' || (A.sp && Bc.sp)) return true;
+    if (A.sp || Bc.sp) return true;
     G[a.r][a.c] = Bc; G[b.r][b.c] = A;
     const ka = a.r * N + a.c, kb = b.r * N + b.c;
     const ok = B.findGroups().some(g => g.cells.has(ka) || g.cells.has(kb));
@@ -260,6 +263,11 @@ B.trySwap = async (a, b) => {
   await Promise.all([arc(A.node, b), arc(Bc.node, a)]);
   if (A.sp === 'b' || Bc.sp === 'b') { B.useMove(); await B.bombCombo(A.sp === 'b' ? b : a, A.sp === 'b' ? a : b); }
   else if (A.sp && Bc.sp) { B.useMove(); await B.specialCombo(b, a); }
+  else if (A.sp || Bc.sp) {
+    B.useMove(); const at = A.sp ? b : a;
+    await B.clearCells(new Map([[at.r * N + at.c, at]]));
+    await B.gravity(); await B.resolve(null);
+  }
   else if (B.formsAt(a, b)) { B.useMove(); await B.resolve([a, b]); }
   else {
     Snd.play('nope', { vol: 0.8 });
@@ -272,6 +280,19 @@ B.trySwap = async (a, b) => {
   }
   await B.endTurn();
 };
+B.activate = async (at) => {
+  if (!B.canPlay() || !B.grid[at.r]?.[at.c]?.sp) return;
+  B.busy = true; B.lastInput = Date.now(); B.stopHint(); Q.U.hideBubble();
+  B.useMove();
+  await B.clearCells(new Map([[at.r * N + at.c, at]]));
+  await B.gravity(); await B.resolve(null); await B.endTurn();
+};
+B.specialFor = (g) => {
+  if (g.max >= 5) return 'b';
+  if (g.hasH && g.hasV) return 'w';
+  if (g.max === 4) return g.runs.find(r => r.cells.length === 4).dir;
+  return g.squares.length ? 'q' : null;
+};
 B.useMove = () => { B.moves--; Q.U.syncGoal(); Q.U.bump('gMoves'); };
 
 B.resolve = async (swapCells) => {
@@ -282,8 +303,7 @@ B.resolve = async (swapCells) => {
     const clear = new Map(), spawns = []; let gained = 0;
     for (const g of groups) {
       g.cells.forEach((p, k) => clear.set(k, p));
-      let sp = null;
-      if (g.max >= 5) sp = 'b'; else if (g.hasH && g.hasV) sp = 'w'; else if (g.max === 4) sp = g.runs.find(r => r.cells.length === 4).dir; else if (g.squares.length) sp = 'q';
+      const sp = B.specialFor(g);
       const cells = [...g.cells.values()];
       gained += cells.length * 60 * cascade;
       if (sp) {
@@ -390,6 +410,9 @@ B.clearCells = async (clear, cascade = 1, spawns = []) => {
     cell.sp = o.sp; cell.t = o.t; cell.fresh = true;
     const nd = B.reskin(cell); const base = nd.userData.base; nd.scale.setScalar(0.001);
     S.ring(nd.position.x, nd.position.y, 100, B.cs * 1.8, 0xfff1b8, 380); S.glow(nd.position.x, nd.position.y, 80, B.cs * 2.4, 0xfff1b8, 420);
+    const name = {w: 'Depth Bomb', q: 'Turtle Torpedo', b: 'Queen’s Amulet', h: 'Tidal Rocket', v: 'Tidal Rocket'}[o.sp];
+    S.floatText(nd.position.x, nd.position.y + B.cs * 0.6, name + '!', Math.round(B.cs * 0.42), '#fff0ad');
+    Q.U.say(name + ' ready! Tap to fire, or swap with another weapon for a combo.', 2800, 'cheer');
     Snd.play('crunch', { rate: 1.3 });
     Q.game.add(320, (e) => nd.scale.setScalar(base * Math.max(0.001, e)), { ease: E.outBackBig });
   }
