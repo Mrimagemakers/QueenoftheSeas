@@ -65,17 +65,31 @@ Q.levelInfo = (n) => {
     star2: Math.round(target * 1.35), star3: Math.round(target * 1.7), last: n % Q.PER === 0 };
   if (collect) { info.ctype = (n * 2 + wi) % Q.TYPES; info.count = Math.min(T.collect_max ?? 30, (T.collect_base ?? 12) + Math.floor(n / 5)); }
   if (collect && extra && boardSize === 7) info.count = Math.ceil(info.count * 0.8);
+  info.shape = n < 4 ? 'rectangle' : ['reef', 'cross', 'diamond', 'rectangle'][(n - 4) % 4];
+  if (info.shape !== 'rectangle') {
+    info.brick = false;
+    info.target = Math.round(info.target * 0.72 / 100) * 100;
+    info.star2 = Math.round(info.target * 1.35); info.star3 = Math.round(info.target * 1.7);
+  }
   return info;
+};
+Q.activeCell = (L, r, c) => {
+  const n = L.boardSize, mid = (n - 1) / 2;
+  if (r < 0 || c < 0 || r >= n || c >= n) return false;
+  if (L.shape === 'diamond') return Math.abs(r - mid) + Math.abs(c - mid) <= n * 0.65;
+  if (L.shape === 'cross') return Math.abs(r - mid) <= 1.5 || Math.abs(c - mid) <= 1.5;
+  if (L.shape === 'reef') return !(r < 2 && (c < 2 || c >= n - 2)) && !(r >= n - 2 && (c === 0 || c === n - 1));
+  return true;
 };
 Q.goalText = (L) => L.kind === 'collect' ? `Collect ${L.count} ${Q.PLURAL[L.ctype]}` : `Reach ${Q.fmt(L.target)} points`;
 
 // ---------- progress ----------
 const KEY = 'progress';
-const P = Q.P = { schemaVersion: 1, unlocked: 1, stars: {}, best: {}, pearls: 0, boost: { trident: 3, amulet: 2 }, chests: 0, restored: [], rankSeen: 0, introSeen: false };
+const P = Q.P = { schemaVersion: 2, voyage: { wins: 0, streak: 0, bestStreak: 0, claimed: [] }, unlocked: 1, stars: {}, best: {}, pearls: 0, boost: { trident: 3, amulet: 2 }, chests: 0, restored: [], rankSeen: 0, introSeen: false };
 Q.progress = { ready: false, scope: 'browser', listeners: [] };
 function clean(v) {
   const T = Q.T;
-  const out = { schemaVersion: 1, unlocked: 1, stars: {}, best: {}, pearls: T.pearls ?? 100,
+  const out = { schemaVersion: 2, voyage: { wins: 0, streak: 0, bestStreak: 0, claimed: [] }, unlocked: 1, stars: {}, best: {}, pearls: T.pearls ?? 100,
     boost: { trident: T.rockets ?? 3, amulet: T.bombs ?? 2 }, chests: 0, restored: [], rankSeen: 0, introSeen: false };
   if (v && typeof v === 'object') {
     if (typeof v.unlocked === 'number') out.unlocked = Q.clamp(Math.round(v.unlocked), 1, Q.LEVELS + 1);
@@ -89,6 +103,10 @@ function clean(v) {
     if (typeof v.chests === 'number') out.chests = Math.max(0, Math.round(v.chests));
     if (Array.isArray(v.restored)) out.restored = [...new Set(v.restored.filter(i => Number.isInteger(i) && i >= 0 && i < Q.REGIONS.length))];
     if (typeof v.rankSeen === 'number') out.rankSeen = Q.clamp(Math.round(v.rankSeen), 0, Q.RANKS.length - 1);
+    if (v.voyage && typeof v.voyage === 'object') {
+      for (const k of ['wins', 'streak', 'bestStreak']) out.voyage[k] = Number.isFinite(v.voyage[k]) ? Q.clamp(Math.floor(v.voyage[k]), 0, 100000) : 0;
+      if (Array.isArray(v.voyage.claimed)) out.voyage.claimed = [...new Set(v.voyage.claimed.filter(k => typeof k === 'string'))].slice(0, 30);
+    }
     out.introSeen = !!v.introSeen;
   }
   return out;
@@ -96,6 +114,9 @@ function clean(v) {
 function apply(v, replace) {
   const c = clean(v);
   if (replace) { Object.assign(P, c); return; }
+  P.voyage.wins = Math.max(P.voyage.wins, c.voyage.wins);
+  P.voyage.bestStreak = Math.max(P.voyage.bestStreak, c.voyage.bestStreak);
+  P.voyage.claimed = [...new Set([...P.voyage.claimed, ...c.voyage.claimed])];
   P.unlocked = Math.max(P.unlocked, c.unlocked);
   for (const k in c.stars) P.stars[k] = Math.max(P.stars[k] || 0, c.stars[k]);
   for (const k in c.best) P.best[k] = Math.max(P.best[k] || 0, c.best[k]);

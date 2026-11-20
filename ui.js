@@ -34,6 +34,7 @@ U.init = () => {
   $('bSound').onclick = () => { Snd.unlock(); Snd.set(!Snd.on); U.syncSound(); if (Snd.on) Snd.play('tap'); };
   $('btTrident').onclick = () => { Snd.unlock(); Snd.play('tap'); B.toggleBooster('trident'); };
   $('btAmulet').onclick = () => { Snd.unlock(); Snd.play('tap'); B.toggleBooster('amulet'); };
+  $('btVoyage').onclick = () => { Snd.unlock(); U.showVoyage(); };
   $('btShop').onclick = () => { Snd.unlock(); Snd.play('tap'); U.showShop(); };
   Snd.listeners.push(() => U.syncSound()); U.syncSound();
   Q.onProgress(() => { U.syncTop(); U.refreshBoosters(); if (U.screen === 'map') { U.refreshMap(); U.syncGoal(); } });
@@ -233,7 +234,9 @@ U.showIntro = () => Pop.show(() => ({ width: 460, outside: introDone, items: [
     { label: 'Read the game concept', style: 'aqua', fn: () => U.showConcept(0) }])
 ] }));
 
-U.showLevelStart = (n) => Pop.show(() => {
+U.showLevelStart = (n) => {
+  if (U.preLevel !== n) { Q.preBoost = null; U.preLevel = n; }
+  return Pop.show(() => {
   const L = Q.levelInfo(n), best = P.stars[n] || 0;
   const prop = L.kind === 'collect' ? Q.props.pieces([[L.ctype, null]], { h: 96, size: 40 }) : Q.props.pieces([[0, null], [3, null], [2, null]], { h: 80, size: 28, gap: 78 });
   return { outside: true, items: [
@@ -241,12 +244,53 @@ U.showLevelStart = (n) => Pop.show(() => {
     { k: 'title', text: `Expedition ${n}` },
     sp(4), prop,
     T(Q.goalText(L), { size: 20, weight: 900 }),
-    T(`in ${L.moves} moves · ${L.boardSize}×${L.boardSize}${L.brick ? ' staggered' : ''} board`, { size: 14, color: '#6b4a22' }),
+    T(`in ${L.moves} moves · ${L.boardSize}×${L.boardSize} ${L.shape}${L.brick ? ' staggered' : ''} board`, { size: 14, color: '#6b4a22' }),
     best ? T(`Your best: ${'★'.repeat(best)}${'☆'.repeat(3 - best)}  ${Q.fmt(P.best[n] || 0)} points`, { size: 13, color: '#7a4c12' }) : sp(2),
-    sp(14),
+    sp(8), T('Starting booster · optional', { size: 14, weight: 900 }),
+    btns(['trident', 'amulet'].map(k => ({
+      label: `${Q.preBoost === k ? '✓ ' : ''}${k === 'trident' ? 'Tide' : 'Amulet'} (${P.boost[k]})`, style: Q.preBoost === k ? 'gold' : 'aqua',
+      fn: () => { if (P.boost[k] > 0) { Q.preBoost = Q.preBoost === k ? null : k; U.showLevelStart(n); } }
+    })), true),
+    T('One from your inventory; placed on the board when you dive.', {size: 12}), sp(12),
     btns([{ label: 'Dive in!', fn: () => { Pop.close(); U.startLevel(n); } }, { label: 'Back to the map', style: 'aqua', fn: () => Pop.close() }])
   ] };
 });
+};
+
+const VOYAGE_REWARDS = [
+  {id: 'reef', title: 'Reef Scout', need: 3, pearls: 75, boost: 'trident', card: 'Coral Guardian'},
+  {id: 'wreck', title: 'Wreck Seeker', need: 10, pearls: 150, boost: 'amulet', card: 'Sunken Compass'},
+  {id: 'abyss', title: 'Abyss Explorer', need: 20, pearls: 300, boost: 'trident', card: 'Queen’s Crown'},
+  {id: 'streak', title: 'Seven Seas Escape', need: 7, pearls: 200, boost: 'amulet', card: 'Moonlit Turtle'}
+];
+U.showVoyage = () => {
+  if (B.running && !B.over) { U.say('Return to the map to open Ocean Treasures.', 2200); return; }
+  const v = P.voyage;
+  return Pop.show(() => ({ width: 470, outside: true, items: [
+    {k: 'eyebrow', text: 'Your expedition rewards'},
+    {k: 'title', text: 'Ocean Treasures'},
+    {k: 'image', src: 'assets/icon_chest.webp', w: 90},
+    T(`${v.wins} new levels cleared · Streak ${v.streak}/7`, {size: 16, weight: 900}),
+    T('Clear new levels to unlock chests and discovery cards. Losing or leaving a dive resets your streak.', {size: 13}),
+    ...VOYAGE_REWARDS.map(r => {
+      const progress = r.id === 'streak' ? v.bestStreak : v.wins;
+      const claimed = v.claimed.includes(r.id), ready = progress >= r.need;
+      return {k: 'shoprow', src: 'assets/icon_chest.webp', title: r.title,
+        sub: `${Math.min(progress, r.need)}/${r.need} · ${r.pearls} pearls + 1 ${r.boost}`,
+        btn: {label: claimed ? 'Collected' : ready ? 'Open chest' : 'Locked', disabled: claimed || !ready,
+          fn: () => {
+            if (v.claimed.includes(r.id) || (r.id === 'streak' ? v.bestStreak : v.wins) < r.need) return;
+            v.claimed.push(r.id); P.pearls += r.pearls; P.boost[r.boost] = Math.min(99, P.boost[r.boost] + 1); Q.saveProgress();
+            Pop.show({items: [{k: 'eyebrow', text: 'Discovery card unlocked'}, {k: 'title', text: r.card},
+              Q.props.chest(), T(`${r.pearls} pearls + 1 ${r.boost}`, {size: 20, weight: 900}),
+              T('Added to your collection.'), sp(14), btns([{label: 'View treasures', fn: U.showVoyage}])]});
+          }} };
+    }), sp(10),
+    T(`Discovery cards: ${v.claimed.length}/4`, {size: 15, weight: 900}),
+    T(VOYAGE_REWARDS.filter(r => v.claimed.includes(r.id)).map(r => r.card).join(' · ') || 'Your first card awaits inside the Reef Scout chest.', {size: 12}),
+    sp(10), btns([{label: 'Back to the ocean', fn: () => Pop.close()}])
+  ]}));
+};
 
 U.showPause = () => Pop.show(() => ({ items: [
   { k: 'eyebrow', text: `${B.level.region.name} · Expedition ${B.level.n}` },

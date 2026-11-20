@@ -24,6 +24,7 @@ B.init = () => {
 };
 
 // ---------- geometry ----------
+B.active = (r, c) => !B.level || Q.activeCell(B.level, r, c);
 B.rowOff = (c) => (B.level?.brick && (c % 2)) ? B.cs * 0.5 : 0;
 B.cx = (c) => B.gx + (c + 0.5) * B.cs;                       // CSS px
 B.cy = (r, c) => B.gy + B.rowOff(c) + (r + 0.5) * B.cs;
@@ -55,12 +56,16 @@ B.drawPanel = (force) => {
   const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); };
   rr(ox - C * 0.12, oy - C * 0.12, N * C + C * 0.24, rowsTall * C + C * 0.24, C * 0.3);
   const gr = g.createLinearGradient(0, oy, 0, oy + rowsTall * C); gr.addColorStop(0, 'rgba(6,52,78,.82)'); gr.addColorStop(1, 'rgba(3,22,40,.88)');
-  g.fillStyle = gr; g.fill();
+  g.fillStyle = gr; if (!B.level || B.level.shape === 'rectangle') g.fill();
   for (let c = 0; c < N; c++) for (let r = 0; r < N; r++) {
+    if (!B.active(r, c)) continue;
     const x = ox + c * C, y = oy + (B.level?.brick && c % 2 ? C * 0.5 : 0) + r * C;
     rr(x + C * 0.05, y + C * 0.05, C * 0.9, C * 0.9, C * 0.2);
-    g.fillStyle = (r + c) % 2 ? 'rgba(120,220,255,.10)' : 'rgba(120,220,255,.04)'; g.fill();
+    g.fillStyle = (r + c) % 2 ? 'rgba(100,208,240,.30)' : 'rgba(100,208,240,.18)'; g.fill();
+    g.lineWidth = 1.5 * u; g.strokeStyle = '#d4b96b'; g.stroke();
   }
+  // Shaped boards use the gold cell outlines instead of a rectangular surround.
+  if (!B.level || B.level.shape === 'rectangle') {
   // the gold rim
   const lw = b * 0.42 * u;
   rr(ox - C * 0.12 - lw / 2, oy - C * 0.12 - lw / 2, N * C + C * 0.24 + lw, rowsTall * C + C * 0.24 + lw, C * 0.36);
@@ -78,6 +83,7 @@ B.drawPanel = (force) => {
     g.drawImage(img, 512 * s - crW / 2, 0, crW, crH, W / 2 - dW / 2, 0, dW, dH);
     const bW = 300 * s, bH = 70 * s, eW = b * 3.2 * u, eH = eW * bH / bW;
     g.drawImage(img, 512 * s - bW / 2, 1024 * s - bH - 6 * s, bW, bH, W / 2 - eW / 2, H - eH, eW, eH);
+  }
   }
   if (B.panelTex && B.panelTex.image === cv) { B.panelTex.needsUpdate = true; }
   else { B.panelTex?.dispose(); B.panelTex = new TH.CanvasTexture(cv); B.panelTex.colorSpace = TH.SRGBColorSpace; B.panelMat.map = B.panelTex; B.panelMat.needsUpdate = true; }
@@ -104,8 +110,16 @@ B.begin = (info) => {
   B.panelSig = null;
   if (B.rect) B.layout(B.rect);
   B.pieces.clear(); B.fillFresh();
+  if (Q.preBoost && Q.P.boost[Q.preBoost] > 0) {
+    const cell = B.grid.flat().find(Boolean);
+    Q.P.boost[Q.preBoost]--; cell.sp = Q.preBoost === 'trident' ? 'h' : 'b';
+    if (cell.sp === 'b') cell.t = -1;
+    Q.saveProgress();
+  }
+  Q.preBoost = null;
+
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-    const cell = B.grid[r][c]; const n = B.makeNode(cell, r, c, B.cs * (N + 2));
+    const cell = B.grid[r][c]; if (!cell) continue; const n = B.makeNode(cell, r, c, B.cs * (N + 2));
     const ty = B.Y(r, c); n.position.z = B.cs * 2;
     Q.game.to(n.position, { y: ty, z: 0 }, 520 + r * 30, { delay: c * 30 + (N - r) * 22, ease: E.outBack });
   }
@@ -119,16 +133,18 @@ B.fillFresh = () => {
   do {
     B.grid = [];
     for (let r = 0; r < N; r++) { B.grid[r] = []; for (let c = 0; c < N; c++) {
+      if (!B.active(r, c)) { B.grid[r][c] = null; continue; }
       let t, k = 0;
       do { t = Q.rnd(Q.TYPES); k++; }
-      while (k < 40 && ((c >= 2 && B.grid[r][c - 1].t === t && B.grid[r][c - 2].t === t) || (r >= 2 && B.grid[r - 1][c].t === t && B.grid[r - 2][c].t === t)
-        || (r >= 1 && c >= 1 && B.grid[r - 1][c].t === t && B.grid[r][c - 1].t === t && B.grid[r - 1][c - 1].t === t)));
+      while (k < 40 && ((c >= 2 && B.grid[r][c - 1]?.t === t && B.grid[r][c - 2]?.t === t) || (r >= 2 && B.grid[r - 1][c]?.t === t && B.grid[r - 2][c]?.t === t)
+        || (r >= 1 && c >= 1 && B.grid[r - 1][c]?.t === t && B.grid[r][c - 1]?.t === t && B.grid[r - 1][c - 1]?.t === t)));
       B.grid[r][c] = { t, sp: null };
     } }
   } while ((B.findGroups().length || !B.findMove()) && ++tries < 80);
 };
 B.startRun = () => { B.running = true; B.runT0 = Date.now(); B.lastInput = Date.now(); mb?.run?.start(); };
 B.abandon = () => {
+  if (B.running && !B.over) { Q.P.voyage.streak = 0; Q.saveProgress(); }
   if (B.running && !B.over) mb?.run?.end({ score: B.score, won: false, quit: true, level: B.level?.n, moves_used: B.movesMax - B.moves, seconds: Math.round((Date.now() - B.runT0) / 1000) });
   B.running = false; B.over = true; B.busy = false; B.armed = null; B.deselect(); B.stopHint();
 };
@@ -141,7 +157,7 @@ B.state = () => ({ running: B.running, busy: B.busy, over: B.over, paused: B.pau
 B.cellAt = (x, y) => {
   const c = Math.floor((x - B.gx) / B.cs); if (c < 0 || c >= N) return null;
   const r = Math.floor((y - B.gy - B.rowOff(c)) / B.cs);
-  return (r >= 0 && r < N) ? { r, c } : null;
+  return (r >= 0 && r < N && B.active(r, c)) ? { r, c } : null;
 };
 B.canPlay = () => B.visible && B.running && !B.busy && !B.over && !B.paused && !Q.Pop.open;
 B.down = (x, y) => {
@@ -217,6 +233,7 @@ B.findMove = () => {
   const G = B.grid, moves = [];
   const test = (a, b) => {
     const A = G[a.r][a.c], Bc = G[b.r][b.c];
+    if (!A || !Bc) return false;
     if (A.sp === 'b' || Bc.sp === 'b' || (A.sp && Bc.sp)) return true;
     G[a.r][a.c] = Bc; G[b.r][b.c] = A;
     const ka = a.r * N + a.c, kb = b.r * N + b.c;
@@ -233,6 +250,7 @@ B.formsAt = (a, b) => { const ka = a.r * N + a.c, kb = b.r * N + b.c; return B.f
 
 // ---------- swapping ----------
 B.trySwap = async (a, b) => {
+  if (!B.active(a.r, a.c) || !B.active(b.r, b.c)) return;
   B.busy = true; B.lastInput = Date.now(); Q.U.hideBubble();
   const G = B.grid, A = G[a.r][a.c], Bc = G[b.r][b.c];
   const d = Q.T.swap_ms ?? 170;
@@ -498,19 +516,17 @@ B.gravity = async (cascade = 1) => {
   const per = (Q.T.fall_ms ?? 95) * speed;
   const falls = [];
   for (let c = 0; c < N; c++) {
-    let write = N - 1;
-    for (let r = N - 1; r >= 0; r--) {
-      const cell = G[r][c]; if (!cell) continue;
-      if (r !== write) { G[write][c] = cell; G[r][c] = null; const d = write - r;
-        falls.push(Q.game.to(cell.node.position, { y: B.Y(write, c), z: 0 }, 130 + per * Math.sqrt(d) * 1.6, { ease: E.outBack })); }
-      write--;
-    }
-    const missing = write + 1;
-    for (let r = write; r >= 0; r--) {
-      const cell = { t: Q.rnd(Q.TYPES), sp: null }; G[r][c] = cell;
-      const n = B.makeNode(cell, r, c, cs * missing);
-      falls.push(Q.game.to(n.position, { y: B.Y(r, c) }, 130 + per * Math.sqrt(missing) * 1.6, { delay: (write - r) * 25, ease: E.outBack }));
-    }
+    const rows = Array.from({length: N}, (_, r) => r).filter(r => B.active(r, c));
+    const cells = rows.map(r => ({cell: G[r][c], from: r})).filter(v => v.cell);
+    rows.forEach(r => { G[r][c] = null; });
+    const missing = rows.length - cells.length;
+    rows.forEach((r, i) => {
+      const entry = cells[i - missing];
+      const cell = entry ? entry.cell : {t: Q.rnd(Q.TYPES), sp: null};
+      G[r][c] = cell;
+      const node = entry ? cell.node : B.makeNode(cell, r, c, cs * N);
+      if (!entry || entry.from !== r) falls.push(Q.game.to(node.position, {y: B.Y(r, c), z: 0}, 130 + per * Math.sqrt(N), {ease: E.outBack}));
+    });
   }
   if (falls.length) Snd.play('crunch', { rate: 1.4 + cascade * 0.05, vol: 0.3 });
   await Promise.all(falls);
@@ -568,12 +584,12 @@ B.endTurn = async () => {
   if (B.pendingPause) { B.pendingPause = false; Q.U.pause(); }
 };
 B.shuffle = async () => {
-  const G = B.grid, cells = [];
-  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) cells.push(G[r][c]);
+  const G = B.grid, cells = [], positions = [];
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (B.active(r, c)) { cells.push(G[r][c]); positions.push({r, c}); }
   let tries = 0;
   do {
     for (let i = cells.length - 1; i > 0; i--) { const j = Q.rnd(i + 1); [cells[i], cells[j]] = [cells[j], cells[i]]; }
-    for (let i = 0; i < cells.length; i++) G[Math.floor(i / N)][i % N] = cells[i];
+    for (let i = 0; i < cells.length; i++) G[positions[i].r][positions[i].c] = cells[i];
   } while ((B.findGroups().length || !B.findMove()) && ++tries < 200);
   if (tries >= 200) {
     for (const c of cells) if (!c.sp) { c.t = Q.rnd(Q.TYPES); B.reskin(c); }
@@ -581,7 +597,7 @@ B.shuffle = async () => {
   }
   Snd.play('swap', { rate: 0.8 });
   const ps = [];
-  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) ps.push(Q.game.to(G[r][c].node.position, { x: B.X(c), y: B.Y(r, c) }, 460, { ease: E.outBack }));
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (G[r][c]) ps.push(Q.game.to(G[r][c].node.position, { x: B.X(c), y: B.Y(r, c) }, 460, { ease: E.outBack }));
   await Promise.all(ps);
 };
 B.win = async () => {
@@ -599,6 +615,10 @@ B.win = async () => {
   mb?.event?.('score', { value: B.score });
   B.running = false;
   const P = Q.P, oldStars = P.stars[L.n] || 0, starsBefore = Q.totalStars(), firstClear = !oldStars;
+  if (firstClear) {
+    P.voyage.wins++; P.voyage.streak++;
+    P.voyage.bestStreak = Math.max(P.voyage.bestStreak, P.voyage.streak);
+  }
   P.stars[L.n] = Math.max(oldStars, stars);
   P.best[L.n] = Math.max(P.best[L.n] || 0, B.score);
   P.unlocked = Math.max(P.unlocked, Math.min(Q.LEVELS + 1, L.n + 1));
@@ -625,6 +645,7 @@ B.win = async () => {
   Q.U.showWin({ score: B.score, stars, bonus, left, level: L, pearls, prizes, starsBefore, next: L.n < Q.LEVELS ? Q.levelInfo(L.n + 1) : null });
 };
 B.lose = async () => {
+  Q.P.voyage.streak = 0; Q.saveProgress();
   B.over = true;
   Q.U.janice('worried');
   Snd.play('lose', { vary: 0 }); Snd.duck(1.5);
