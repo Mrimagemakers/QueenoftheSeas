@@ -114,3 +114,32 @@ body:not(.onmap) #gScore{order:0}
 body:not(.onmap) .gmid{order:1}
 body:not(.onmap) .boost{background:radial-gradient(circle at 35% 25%,#46d7bb,#087384 60%,#04344f)}
 @media(max-height:560px){.voyage-nav{padding:4px;font-size:13px;margin-top:8px}.voyage-nav span{display:none}}
+
+/* Royal enamel collection — consistent metal, depth and typography. */
+:root{--metal:linear-gradient(145deg,#fff0b9 0%,#c59b57 24%,#84612f 50%,#edcf89 75%,#a57637 100%);--enamel:linear-gradient(155deg,#216e7f,#103e55 55%,#07283e)}
+.round,.boost,.voyage-nav,.node,.badge,.jface{transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}
+.round{border:2px solid transparent;background:var(--enamel) padding-box,var(--metal) border-box;box-shadow:inset 0 1px 0 #c9f2ef55,inset 0 -3px 4px #00152288,0 3px 0 #021b2a,0 6px 10px #00121b66;color:#fff0cb;font-family:Nunito,sans-serif}
+.boost,body:not(.onmap) .boost{border-radius:22%;border:3px solid transparent;background:radial-gradient(ellipse at 35% 0%,#417c8955,transparent 65%) padding-box,var(--enamel) padding-box,var(--metal) border-box;box-shadow:inset 0 1px 0 #e7ffff77,inset 0 -5px 7px #001523aa,0 5px 0 #041b29,0 8px 15px #00111e88}
+.boost::before{content:'';position:absolute;inset:4px;border:1px solid #c9e2cf40;border-radius:19%;pointer-events:none}
+.boost img{inset:8% 13% 19%;width:74%;height:69%;filter:drop-shadow(0 3px 3px #00111bcc)}
+.boost small{bottom:0;max-width:96%;padding:2px 5px 1px;border-radius:5px;background:linear-gradient(#122d3eee,#041a2aee);font-family:Nunito,sans-serif;font-size:clamp(10px,1.45vh,13px);font-weight:900;letter-spacing:.02em;text-shadow:0 1px 2px #000;color:#f9e8bf}
+.boost .cnt,.boost .chestc{top:-7px;right:-7px;min-width:24px;height:24px;border:1px solid #e7ca84;border-radius:8px;background:linear-gradient(#264e60,#0d283d);color:#fff1d4;box-shadow:inset 0 1px 0 #ffffff33,0 3px 4px #00111e88;line-height:22px;font-size:12px;font-weight:900}
+.boost .chestc{font-size:10px;padding:0 4px}
+.boost.empty{filter:saturate(.45)}
+.boost.armed{animation:none;transform:translateY(-3px);box-shadow:inset 0 0 0 1px #e5fff2,0 5px 0 #041b29,0 0 18px #73e9df88}
+.voyage-nav{position:relative;min-height:55px;border:2px solid transparent;border-radius:15px;background:linear-gradient(125deg,#227e79,#10535b 55%,#092d46) padding-box,var(--metal) border-box;color:#ffefcc;letter-spacing:.025em;box-shadow:inset 0 1px 0 #c4fff055,inset 0 -4px 7px #00182288,0 4px 0 #031c2b,0 8px 15px #00121f66;font-size:18px}
+.voyage-nav::before{content:'';position:absolute;inset:4px;border:1px solid #d8d7a83d;border-radius:10px;pointer-events:none}
+.voyage-nav span{font-size:10px;font-weight:700;letter-spacing:.09em;color:#c6e7df;margin-top:2px}
+.node{background:linear-gradient(145deg,#fff3cd,#dcbb79 48%,#b08041);border:2px solid #fff0bf;box-shadow:inset 0 0 0 2px #8a622e,inset 0 3px 4px #ffffff66,0 4px 0 #5a4226,0 7px 12px #00142188;font-family:Nunito,sans-serif;font-size:22px}
+.node.current{animation:royalPulse 2.4s ease-in-out infinite;background:linear-gradient(145deg,#40958d,#125a61 55%,#0a344a);color:#fff1cd;border-color:#f2d790;box-shadow:inset 0 0 0 2px #22686a,0 4px 0 #062733,0 0 20px #6cd7cb55}
+.node.locked{border-color:#4c6268;background:linear-gradient(145deg,#405966,#1c3445);color:#aabcc2;box-shadow:inset 0 1px 0 #c0d7df22,0 3px 0 #0a2130,0 5px 9px #00142166}
+@keyframes royalPulse{50%{filter:brightness(1.16);box-shadow:inset 0 0 0 2px #22686a,0 4px 0 #062733,0 0 23px #6cd7cb88}}
+#top.parch{background:linear-gradient(125deg,#123d52f5,#072739f5);color:#f6eaca;border:1px solid #d6b976;box-shadow:inset 0 1px 0 #bce0d933,0 3px 0 #001825,0 6px 15px #00152366}
+.stat.rank{color:#ddc78f;font-family:Nunito,sans-serif;font-size:clamp(10px,1.6vh,14px)}
+.badge,.jface{background:var(--metal);box-shadow:0 0 0 1px #705331,inset 0 1px 0 #fff7d7,0 4px 8px #00172599}
+.round:active,.boost:active,.voyage-nav:active,.node:active{transform:translateY(2px) scale(.98);filter:brightness(.94)}
+button:focus-visible,a:focus-visible{outline:3px solid #a4fff0;outline-offset:5px}
+@media(hover:hover){.round:hover,.boost:hover,.voyage-nav:hover,.node:not(.locked):hover{filter:brightness(1.14)}}
+@media(prefers-reduced-motion:reduce){.node.current,.boost.armed{animation:none}.round,.boost,.voyage-nav,.node{transition:none}}
+@media(max-height:560px){.voyage-nav{min-height:36px;font-size:14px}.boost small{font-size:10px}.boost .cnt{min-width:21px;height:21px;line-height:19px}}
+body.land.onmap .voyage-nav{position:absolute;left:10px;bottom:80px;width:calc(38% - 20px);min-height:45px;z-index:2}

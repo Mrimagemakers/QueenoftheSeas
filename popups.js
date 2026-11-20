@@ -23,25 +23,43 @@ function goldGrad(g, y0, y1) {
   gr.addColorStop(0, '#fff6cf'); gr.addColorStop(0.4, '#f0c35a'); gr.addColorStop(0.62, '#b27a1e'); gr.addColorStop(0.82, '#ffe7a0'); gr.addColorStop(1, '#a8701c');
   return gr;
 }
+// Sculpted enamel controls: metal casing, recessed face and a restrained light sweep.
 const BTN = {
-  gold: { a: '#fff1b8', b: '#e9b949', c: '#9a6a1c', ink: '#3b2306', glow: false },
-  aqua: { a: '#c8fdff', b: '#22b8d0', c: '#06506c', ink: '#ffffff', glow: true },
-  coral: { a: '#ffd0b8', b: '#ef7a5a', c: '#8a2c1a', ink: '#ffffff', glow: true },
-  dim: { a: '#cfd8dc', b: '#8aa0ab', c: '#45545c', ink: '#f0f4f5', glow: false }
+  gold: { a: '#299e85', b: '#096458', c: '#033e40', ink: '#fff4d5', rim: true },
+  aqua: { a: '#29758e', b: '#12495f', c: '#092c43', ink: '#edfaff', rim: true },
+  coral: { a: '#bd6c65', b: '#873f4a', c: '#512839', ink: '#fff2de', rim: true },
+  dim: { a: '#697b81', b: '#46575e', c: '#303e47', ink: '#d0dade', rim: false }
 };
 function buttonMesh(label, w, h, style = 'gold', sub) {
   const u = S.dpr * 2, W = Math.round(w * u), H = Math.round(h * u), st = BTN[style] || BTN.gold;
   const tex = S.canvasTex(W, H, (g) => {
-    const r = H / 2 - 3 * u;
-    g.beginPath(); g.roundRect(3 * u, 3 * u, W - 6 * u, H - 6 * u, r);
-    const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, st.a); gr.addColorStop(0.5, st.b); gr.addColorStop(1, st.c);
-    g.fillStyle = gr; g.fill(); g.lineWidth = 2.5 * u; g.strokeStyle = '#3b2306'; g.stroke();
-    g.beginPath(); g.roundRect(3 * u + r * 0.4, 5 * u, W - 6 * u - r * 0.8, H * 0.36, H * 0.18); g.fillStyle = 'rgba(255,255,255,.35)'; g.fill();
-    g.beginPath(); g.roundRect(6 * u, 6 * u, W - 12 * u, H - 12 * u, r - 3 * u); g.lineWidth = 1.2 * u; g.strokeStyle = 'rgba(255,250,220,.7)'; g.stroke();
-    const fs = Math.min(H * 0.4, (W * 0.86) / Math.max(4, label.length * 0.62));
-    g.font = `800 ${fs}px Cinzel, Georgia, serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-    if (st.ink === '#ffffff' || st.ink === '#f0f4f5') { g.lineWidth = fs * 0.16; g.strokeStyle = 'rgba(0,30,45,.75)'; g.lineJoin = 'round'; g.strokeText(label, W / 2, H / 2 + fs * 0.05); }
-    g.fillStyle = st.ink; g.fillText(label, W / 2, H / 2 + fs * 0.05);
+    const box = (x, y, bw, bh, r) => { g.beginPath(); g.roundRect(x*u,y*u,bw*u,bh*u,r*u); };
+    const grad = (stops, y0=0, y1=H) => { const gr=g.createLinearGradient(0,y0,0,y1); stops.forEach(([at,col])=>gr.addColorStop(at,col)); return gr; };
+    const r = Math.min(14, h * .26);
+    // Lower edge establishes depth without a plastic bubble highlight.
+    box(2,5,w-4,h-7,r); g.fillStyle='#021a25';g.fill();
+    box(2,1,w-4,h-7,r);g.fillStyle=st.rim ? grad([[0,'#fff0b9'],[.20,'#c99a4f'],[.48,'#8b602c'],[.72,'#e9c779'],[1,'#855528']]) : '#7c8c90';g.fill();
+    box(4,3,w-8,h-11,r-2);g.fillStyle='#142b34';g.fill();
+    box(5,4,w-10,h-13,r-3);g.fillStyle=grad([[0,st.a],[.48,st.b],[1,st.c]]);g.fill();
+    g.save();g.clip();
+    const light=g.createRadialGradient(W*.3,0,0,W*.3,0,W*.65);
+    light.addColorStop(0,'rgba(210,255,242,.19)');light.addColorStop(1,'rgba(210,255,242,0)');
+    g.fillStyle=light;g.fillRect(0,0,W,H);
+    g.strokeStyle='rgba(198,242,231,.15)';g.lineWidth=.6*u;
+    // Fine engraved wave lines on the enamel.
+    for(let i=0;i<3;i++){g.beginPath();g.moveTo(W*.57,H*(.65+i*.08));g.bezierCurveTo(W*.72,H*(.2+i*.08),W*.8,H*(1+i*.05),W,H*(.45+i*.09));g.stroke();}
+    g.restore();
+    box(6,5,w-12,h-15,r-4);g.lineWidth=.6*u;g.strokeStyle='rgba(225,255,244,.35)';g.stroke();
+    let fs = H*.34;
+    g.font=`900 ${fs}px Nunito, sans-serif`;
+    while(g.measureText(label).width > W*.79 && fs>8*u){fs-=.5*u;g.font=`900 ${fs}px Nunito, sans-serif`;}
+    g.textAlign='center';g.textBaseline='middle';
+    g.shadowColor='#011823';g.shadowOffsetY=1.4*u;g.shadowBlur=1.5*u;
+    g.fillStyle=st.ink;g.fillText(label,W/2,H/2-2*u);g.shadowBlur=0;g.shadowOffsetY=0;
+    // Tiny metal studs keep the silhouette clean and jewel-like.
+    if(w>180 && st.rim) for(const x of [13,w-13]){
+      g.beginPath();g.arc(x*u,(h/2-2)*u,1.4*u,0,Math.PI*2);g.fillStyle='#eed698';g.fill();
+    }
   });
   const m = new TH.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false });
   const mesh = new TH.Mesh(S.G.plane, m); mesh.scale.set(w, h, 1); mesh.userData.w = w; mesh.userData.h = h; mesh.renderOrder = 12;
@@ -69,7 +87,7 @@ async function build(spec) {
     else if (it.k === 'space') h = (it.h || 10) * s;
     else if (it.k === 'image') { it.w = Math.min(inner, (it.w || 300) * s); it.ih = it.img ? it.w * (it.ratio || it.img.height / it.img.width) : it.w * 0.6; h = it.ih; }
     else if (it.k === 'prop') h = (it.h || 90) * s;
-    else if (it.k === 'buttons') { const bh = 46 * s; it.bh = bh; h = it.row ? bh : it.list.length * bh + (it.list.length - 1) * 10 * s; }
+    else if (it.k === 'buttons') { const bh = 52 * s; it.bh = bh; h = it.row ? bh : it.list.length * bh + (it.list.length - 1) * 10 * s; }
     else if (it.k === 'shoprow') { it.rh = 68 * s; h = it.rh; meas.font = font(700, 13 * s); it.lines = wrap(meas, it.sub, inner - it.rh - 130 * s); }
     lay.push({ it, y, h }); y += h;
   }
@@ -83,7 +101,7 @@ async function build(spec) {
   if (parch) { const k = Math.max(cw / parch.width, ph / parch.height); g.drawImage(parch, (cw - parch.width * k) / 2, (ph - parch.height * k) / 2, parch.width * k, parch.height * k); }
   else { g.fillStyle = '#efe0bd'; g.fillRect(0, 0, cw, ph); }
   const vg = g.createRadialGradient(cw / 2, ph / 2, Math.min(cw, ph) * 0.3, cw / 2, ph / 2, Math.max(cw, ph) * 0.75);
-  vg.addColorStop(0, 'rgba(255,248,225,.25)'); vg.addColorStop(1, 'rgba(110,70,20,.35)'); g.fillStyle = vg; g.fillRect(0, 0, cw, ph);
+  vg.addColorStop(0, 'rgba(255,252,240,.65)'); vg.addColorStop(1, 'rgba(130,155,150,.12)'); g.fillStyle = vg; g.fillRect(0, 0, cw, ph);
   g.restore();
   g.beginPath(); g.roundRect(4, 4, cw - 8, ph - 8, R); g.lineWidth = 7 * s + 3; g.strokeStyle = '#4a2f0a'; g.stroke();
   g.beginPath(); g.roundRect(4, 4, cw - 8, ph - 8, R); g.lineWidth = 7 * s; g.strokeStyle = goldGrad(g, 0, ph); g.stroke();
@@ -227,7 +245,7 @@ function press(b) {
   if (!p.ready) settle(p);
   p.pressing = true; Q.Snd.play('tap');
   const base = b.userData.base;
-  Q.ui.add(150, (e) => { const k = 1 - 0.1 * Math.sin(e * Math.PI); b.scale.set(base.x * k, base.y * k, 1); }).then(() => { if (Pop.open) Pop.open.pressing = false; b.userData.fn(); });
+  Q.ui.add(150, (e) => { const k = 1 - 0.045 * Math.sin(e * Math.PI); b.scale.set(base.x * k, base.y * k, 1); }).then(() => { if (Pop.open) Pop.open.pressing = false; b.userData.fn(); });
 }
 function settle(p) {
   p.settled = true; p.ready = true;
@@ -237,7 +255,7 @@ function settle(p) {
 function focusBtn(p, i) {
   const live = p.buttons.filter(b => b.userData.fn); if (!live.length) return;
   p.focus = (i + live.length) % live.length;
-  for (const m of p.buttons) { const base = m.userData.base, k = m === live[p.focus] ? 1.06 : 1; m.scale.set(base.x * k, base.y * k, 1); }
+  for (const m of p.buttons) { const base = m.userData.base, k = m === live[p.focus] ? 1.025 : 1; m.scale.set(base.x * k, base.y * k, 1); }
 }
 // keyboard: Enter or Space presses the highlighted button (the first one unless moved), Tab and arrows move it
 Pop.key = (e) => {
@@ -252,7 +270,7 @@ Pop.key = (e) => {
 Pop.pointerMove = (x, y, canvas) => {
   const p = Pop.open; if (!p || !p.buttons) return;
   const b = hit(x, y);
-  for (const m of p.buttons) { const on = m === b && m.userData.fn; const base = m.userData.base; const k = on ? 1.05 : 1; m.scale.set(base.x * k, base.y * k, 1); }
+  for (const m of p.buttons) { const on = m === b && m.userData.fn; const base = m.userData.base; const k = on ? 1.025 : 1; m.scale.set(base.x * k, base.y * k, 1); }
   canvas.style.cursor = b && b.userData.fn ? 'pointer' : '';
 };
 Pop.tick = (dt, now) => {
