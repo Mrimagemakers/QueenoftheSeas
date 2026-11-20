@@ -309,7 +309,7 @@ U.showHowto = () => Pop.show(() => ({ width: 470, outside: true, items: [
   T(RULES, { size: 14 }),
   sp(6),
   Q.props.pieces([[2, 'h'], [1, 'w'], [3, 'q'], [0, 'b']], { h: 66, size: 25, captions: ['Tide|4 in a row', 'Depth Bomb|L or T', 'Turtle Torpedo|2x2 square', 'Amulet|5 in a row'] }),
-  T('A Tide sweeps its row or column. A Depth Bomb blasts a 3x3 area. Tap a weapon to fire it using one move, or swap it with a neighbour. A Turtle Torpedo targets three pieces. The Queen\'s Amulet clears every piece of one kind. Swap two powers together for a bigger splash.', { size: 13, color: '#5a4020' }),
+  T('A Tide sweeps its row or column. A Depth Bomb blasts a 3x3 area. Tap a weapon to fire it using one move, or swap it with a neighbour. A Turtle Torpedo targets three pieces. The Queen\'s Amulet clears every piece of one kind. Swap adjacent weapons to combine them: Bomb + Bomb blasts 7x7; Turtle + Turtle targets 9 pieces; Turtle + Rocket or Bomb launches 3 guided attacks; Rocket + Bomb clears 3 rows and 3 columns; two Amulets clear the board.', { size: 13, color: '#5a4020' }),
   sp(4),
   T('Tap the Trident or the Amulet on the shelf to use a booster. Win expeditions for stars and pearls; every 10 stars opens a treasure chest.', { size: 13, color: '#5a4020' }),
   sp(12),

@@ -466,6 +466,11 @@ B.turtleSwim = (from, targets) => {
   chain.then(() => Q.game.add(260, (e) => { t.scale.setScalar(cs * 0.6 * (1 - e)); t.position.y += cs * 0.04; })).then(() => S.fxRoot.remove(t));
 };
 
+B.announceCombo = (name, at) => {
+  Q.U.say(name + '!', 2600, 'cheer');
+  S.floatText(B.X(at.c), B.Y(at.r, at.c) + B.cs, name, Math.round(B.cs * 0.48), '#fff0ad');
+  S.ring(B.X(at.c), B.Y(at.r, at.c), 120, B.cs * 3, 0xffd67a, 650);
+};
 B.bombCombo = async (bombAt, otherAt) => {
   const G = B.grid, bomb = G[bombAt.r][bombAt.c], other = G[otherAt.r][otherAt.c];
   const clear = new Map(); const add = (r, c) => clear.set(r * N + c, { r, c });
@@ -478,11 +483,12 @@ B.bombCombo = async (bombAt, otherAt) => {
   if (other.sp === 'b') {
     other.sp = null;
     for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) add(r, c);
-    Q.U.say('A royal tidal wave!', 1300); B.addScore(5000);
+    B.announceCombo('Royal Tidal Wave', bombAt); B.addScore(5000);
   } else {
     const t = other.t, targets = [];
     for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (G[r][c] && G[r][c].t === t) targets.push({ r, c });
     if (other.sp) {
+      B.announceCombo('Royal Arsenal', bombAt);
       for (const p of targets) { const cell = G[p.r][p.c]; if (!cell.sp) { cell.sp = other.sp === 'w' ? 'w' : other.sp === 'q' ? 'q' : (Math.random() < 0.5 ? 'h' : 'v'); B.reskin(cell); S.ring(cell.node.position.x, cell.node.position.y, 100, B.cs * 1.4, 0xfff1b8, 300); } }
       Snd.play('chime', { rate: 1.5 });
       await wait(420);
@@ -505,9 +511,10 @@ B.specialCombo = async (at, otherAt) => {
   a.sp = null; b.sp = null;
   add(at.r, at.c); add(otherAt.r, otherAt.c);
   const x = B.X(at.c), y = B.Y(at.r, at.c);
+  B.announceCombo({ww: 'Mega Depth Charge', qq: 'Torpedo Swarm', hq: 'Guided Tidal Strike', qw: 'Homing Depth Charges', hw: 'Tidal Bombstorm', hh: 'Crossfire Rockets'}[kinds] || 'Ocean Combo', at);
   if (kinds.includes('q')) {
     const other = kinds.replace('q', '') || 'q';
-    const tg = B.turtleTargets(at, clear, other === 'q' ? 6 : 1);
+    const tg = B.turtleTargets(at, clear, other === 'q' ? 9 : 3);
     B.turtleSwim(at, tg); await wait(200);
     for (const p of tg) {
       if (other === 'q') add(p.r, p.c);
@@ -516,9 +523,9 @@ B.specialCombo = async (at, otherAt) => {
     }
     Snd.play('thump', { rate: 1.2 });
   } else if (kinds === 'ww') {
-    for (let r = at.r - 2; r <= at.r + 2; r++) for (let c = at.c - 2; c <= at.c + 2; c++) add(r, c);
+    for (let r = at.r - 3; r <= at.r + 3; r++) for (let c = at.c - 3; c <= at.c + 3; c++) add(r, c);
     Snd.play('thump', { vol: 1 }); Snd.duck(0.6); B.shake(200, B.cs * 0.1);
-    S.ring(x, y, 100, B.cs * 5.5, 0x7ff6ff, 520); S.glow(x, y, 90, B.cs * 6, 0x5ff0ff, 600);
+    S.ring(x, y, 100, B.cs * 7.5, 0x7ff6ff, 650); S.glow(x, y, 90, B.cs * 8, 0x5ff0ff, 600);
   } else if (kinds.includes('w')) {
     for (let d = -1; d <= 1; d++) { for (let i = 0; i < N; i++) { add(at.r + d, i); add(i, at.c + d); } }
     Snd.play('whoosh', { vol: 1 }); Snd.play('thump', { rate: 1.2 });

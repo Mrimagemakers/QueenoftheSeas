@@ -34,3 +34,21 @@ test('tap activation spends exactly one move and resolves before ending turn',as
 test('bomb blast covers 3x3 and clips at board edges',()=>{
  const Q=setup(),B=Q.B;assert.equal(B.area({sp:'w'},{r:3,c:3}).length,9);assert.equal(B.area({sp:'w'},{r:0,c:0}).length,4);
 });
+test('weapon combinations deliver larger blasts and nine-target swarms',async()=>{
+ for(const [a,b,expected] of [['w','w',49],['h','w',39],['h','v',15],['q','q',11]]){
+  const Q=setup(),B=Q.B;B.level={kind:'score'};Q.game.wait=async()=>{};
+  Q.S.ring=Q.S.glow=()=>{};Q.Snd.duck=()=>{};B.shake=B.tideFly=B.turtleSwim=()=>{};
+  B.grid=Array.from({length:8},()=>Array.from({length:8},()=>({t:1,sp:null})));
+  B.grid[3][3].sp=a;B.grid[3][4].sp=b;
+  let affected;B.clearCells=async c=>affected=c;B.gravity=async()=>{};B.resolve=async()=>{};
+  await B.specialCombo({r:3,c:3},{r:3,c:4});
+  assert.equal(affected.size,expected,`${a}+${b}`);assert.equal(B.grid[3][3].sp,null);assert.equal(B.grid[3][4].sp,null);
+ }
+});
+test('two amulets clear the full board',async()=>{
+ const Q=setup(),B=Q.B;Q.S.ring=Q.S.glow=()=>{};Q.Snd.duck=()=>{};B.shake=()=>{};
+ B.grid=Array.from({length:8},()=>Array.from({length:8},()=>({t:1,sp:null})));
+ B.grid[3][3].sp='b';B.grid[3][4].sp='b';let count;
+ B.clearCells=async c=>count=c.size;B.gravity=async()=>{};B.resolve=async()=>{};
+ await B.bombCombo({r:3,c:3},{r:3,c:4});assert.equal(count,64);
+});
