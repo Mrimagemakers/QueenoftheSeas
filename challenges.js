@@ -3,6 +3,8 @@
 'use strict';
 const Q=window.QOS,R=window.OceanBlockRules;
 const definitions={blocks:['Reef Blocks','Fit falling coral blocks together. Fill horizontal rows to clear them.'],memory:['Memory Dive','Find matching sea creatures before your air runs out.'],sprint:['Pearl Sprint','Tap the pearl. Avoid the dark urchins. Each mistake costs time.']};
+const artwork={blocks:'reef-blocks',memory:'memory-dive',sprint:'pearl-sprint'};
+function picture(key,cls='arc-art'){const img=el('img',cls);img.setAttribute('src','assets/arcade/'+artwork[key]+'.webp');img.setAttribute('alt','');return img;}
 let overlay=null,mode=null,state=null,raf=0,last=0,previousFocus=null;
 const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
 function button(label,fn,cls='arc-btn'){const b=el('button',cls,label);b.type='button';b.onclick=fn;return b;}
@@ -16,16 +18,24 @@ function shell(title){
 }
 function close(){cancelAnimationFrame(raf);mode=null;state=null;overlay?.remove();overlay=null;previousFocus?.focus();}
 function hub(){
- const panel=shell('Ocean Arcade');panel.append(el('p','arc-intro','Three challenges. Three medal tiers each. Earn pearls and tools through play.'));
+ const panel=shell('Ocean Arcade');panel.className+=' arc-hub';
+ const welcome=el('div','arc-welcome');const portrait=el('img','arc-guide');portrait.setAttribute('src','assets/janice_portrait.webp');portrait.setAttribute('alt','Dr. Janice Miller');
+ const greeting=el('div');greeting.append(el('span','arc-eyebrow','DR. JANICE’S CHALLENGE COLLECTION'),el('p','arc-intro','Explore. Play. Discover your next treasure.'));welcome.append(portrait,greeting);panel.append(welcome);
+ const grid=el('div','arc-gallery');
  for(const [key,[name,desc]] of Object.entries(definitions)){
   const record=Q.P.challenges[key]||{tier:0,best:0};const card=el('article','arc-card');
-  card.append(el('h3','',name),el('p','',desc),el('p','arc-meta',`${record.tier}/3 medals · Best ${record.best}`),button(record.tier>=3?'Practice':'Play tier '+(record.tier+1),()=>start(key)));panel.append(card);
+  const artButton=button('',()=>start(key),'arc-art-button');artButton.setAttribute('aria-label','Open '+name);artButton.append(picture(key));
+  const body=el('div','arc-card-body');body.append(el('span','arc-eyebrow',key==='blocks'?'CORAL PUZZLE':key==='memory'?'OCEAN DISCOVERY':'TREASURE RUSH'),el('h3','',name),el('p','',desc));
+  const medals=el('div','arc-medals');medals.setAttribute('aria-label',record.tier+' of 3 medals earned');for(let i=0;i<3;i++)medals.append(el('span',i<record.tier?'earned':'','✦'));
+  body.append(medals,el('p','arc-meta',`${record.tier}/3 medals · Best ${record.best}`),button(record.tier>=3?'Practice':'Play tier '+(record.tier+1),()=>start(key)));
+  card.append(artButton,body);grid.append(card);
  }
- panel.append(el('p','arc-note','Rewards and medals save with your expedition progress.'));
+ panel.append(grid,el('p','arc-note','Win each new medal tier to earn 75, 150, then 225 pearls + an expedition tool. Progress saves automatically.'));
 }
 Q.Challenges={open(){if(Q.B.running&&!Q.B.over)return;if(!Q.progress.ready||Q.Pop.open)return;previousFocus=document.activeElement;hub();},close};
 function start(key){
  const panel=shell(definitions[key][0]);mode=key;
+ const banner=el('div','arc-game-banner');banner.append(picture(key),el('p','',definitions[key][1]));panel.append(banner);
  const record=Q.P.challenges[key]||{tier:0,best:0};const tier=Math.min(2,record.tier);
  state={tier,practice:record.tier>=3,finished:false,paused:false,elapsed:0,score:0};
  const toolbar=el('div','arc-toolbar');state.status=el('div','arc-status');state.status.setAttribute('aria-live','polite');state.pauseBtn=button('Pause',pause);toolbar.append(state.status,state.pauseBtn);panel.append(toolbar);
