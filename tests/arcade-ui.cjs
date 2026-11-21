@@ -5,7 +5,7 @@ class Element{
  append(...ns){ns.forEach(n=>{n.parent=this;this.children.push(n)})}insertBefore(n,b){n.parent=this;this.children.splice(this.children.indexOf(b),0,n)}
  get lastChild(){return this.children.at(-1)}remove(){if(this.parent)this.parent.children=this.parent.children.filter(n=>n!==this)}setAttribute(k,v){this.attrs[k]=v}focus(){doc.activeElement=this}animate(){}
  querySelectorAll(sel){return this.children.flatMap(c=>[(sel==='button'&&c.tag==='button')||(sel==='button:not(:disabled)'&&c.tag==='button'&&!c.disabled)?c:null,...c.querySelectorAll(sel)]).filter(Boolean)}querySelector(sel){return this.querySelectorAll(sel)[0]}
- getContext(){return {fillRect(){},strokeRect(){},beginPath(){},roundRect(){},fill(){},stroke(){}}}
+ getContext(){return {save(){},restore(){},translate(){},moveTo(){},lineTo(){},closePath(){},createLinearGradient(){return {addColorStop(){}}},fillRect(){},strokeRect(){},beginPath(){},roundRect(){},fill(){},stroke(){}}}
 }
 let doc;
 function setup(){

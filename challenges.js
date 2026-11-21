@@ -104,9 +104,27 @@ function blockInput(action){
 }
 function drawBlocks(){
  const s=state,g=s.canvas?.getContext('2d');if(!g)return;
- const colors=['','#aa7ee9','#ffc95b','#5ddac2','#ea8cb9','#55b7f0','#ff8a62','#b9e5e8'];
+ const colors=['','#b25bff','#ffbd24','#20e5c1','#fa63b5','#35bfff','#ff7242','#8ceafa'];
  g.fillStyle='#061e32';g.fillRect(0,0,300,540);
- const cell=(x,y,v,ghost=false)=>{if(y<0)return;g.globalAlpha=ghost?.25:1;g.fillStyle=colors[v];g.beginPath();g.roundRect(x*30+2,y*30+2,26,26,5);g.fill();g.strokeStyle=ghost?'#fff':'#ffffff77';g.lineWidth=1;g.stroke();g.globalAlpha=1;};
+ // Transparent jewel faces let the ocean grid show through; beveled facets give each cube depth.
+ const cell=(x,y,v,ghost=false)=>{
+  if(y<0)return;const X=x*30+2,Y=y*30+2,c=colors[v];
+  g.save();g.translate(X,Y);
+  if(ghost){g.fillStyle=c+'16';g.fillRect(1,1,24,24);g.strokeStyle=c+'99';g.lineWidth=1;g.strokeRect(1,1,24,24);g.restore();return;}
+  const face=g.createLinearGradient(0,0,26,26);face.addColorStop(0,'#f0ffffba');face.addColorStop(.18,c+'c4');face.addColorStop(.5,c+'55');face.addColorStop(.76,c+'ac');face.addColorStop(1,'#03162b99');
+  g.shadowColor=c;g.shadowBlur=6;g.fillStyle=face;g.beginPath();g.roundRect(.5,.5,25,25,2);g.fill();g.shadowBlur=0;
+  const facet=(points,fill)=>{g.beginPath();points.forEach(([a,b],i)=>i?g.lineTo(a,b):g.moveTo(a,b));g.closePath();g.fillStyle=fill;g.fill();};
+  facet([[1,1],[25,1],[20,6],[6,6]],'#eaffff85');
+  facet([[1,1],[6,6],[6,20],[1,25]],c+'aa');
+  facet([[25,1],[20,6],[20,20],[25,25]],'#001b406e');
+  facet([[1,25],[6,20],[20,20],[25,25]],c+'c0');
+  facet([[6,6],[20,6],[6,20]],'#e4ffff26');
+  facet([[6,20],[20,6],[20,20]],c+'33');
+  g.strokeStyle='#e0ffffb8';g.lineWidth=.85;g.strokeRect(.8,.8,24.4,24.4);
+  g.strokeStyle=c+'cf';g.lineWidth=.6;g.strokeRect(6,6,14,14);
+  g.beginPath();g.moveTo(2,9);g.lineTo(2,2);g.lineTo(13,2);g.strokeStyle='#ffffffed';g.lineWidth=1.2;g.stroke();
+  g.fillStyle='#fff';g.fillRect(3,3,2,2);g.restore();
+ };
  for(let y=0;y<18;y++)for(let x=0;x<10;x++){g.strokeStyle='#28506855';g.strokeRect(x*30,y*30,30,30);if(s.grid[y][x])cell(x,y,s.grid[y][x]);}
  const p=s.piece;let landing=p.y;while(R.fits(s.grid,p.m,p.x,landing+1))landing++;
  p.m.forEach((row,y)=>row.forEach((v,x)=>{if(v)cell(p.x+x,landing+y,p.color,true)}));
