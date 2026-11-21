@@ -33,8 +33,17 @@ function hub(){
  panel.append(grid,el('p','arc-note','Win each new medal tier to earn 75, 150, then 225 pearls + an expedition tool. Progress saves automatically.'));
 }
 Q.Challenges={open(){if(Q.B.running&&!Q.B.over)return;if(!Q.progress.ready||Q.Pop.open)return;previousFocus=document.activeElement;hub();},close};
+function reefScenery(panel){
+ overlay.className+=' arc-reef';panel.className+=' arc-reef-panel';
+ const ocean=el('div','reef-atmosphere');ocean.setAttribute('aria-hidden','true');
+ ocean.append(el('div','reef-light'));
+ for(let i=0;i<22;i++){const bubble=el('i','reef-bubble');bubble.setAttribute('style',`--x:${(i*47)%100}%;--size:${5+(i*7)%19}px;--duration:${12+i%9}s;--delay:-${i*1.7}s;--drift:${i%2?35:-30}px`);ocean.append(bubble);}
+ for(let i=0;i<7;i++){const fish=el('i','reef-fish');fish.setAttribute('style',`--y:${14+i*11}%;--duration:${24+i*4}s;--delay:-${i*8}s;--size:${18+i%3*9}px;--tint:${i%2?'#ffd47c':'#76e4ee'}`);ocean.append(fish);}
+ for(let i=0;i<2;i++){const jelly=el('div','reef-jelly');jelly.setAttribute('style',`left:${i?88:6}%;top:${i?61:28}%;--delay:-${i*3}s`);for(let j=0;j<4;j++)jelly.append(el('i'));ocean.append(jelly);}
+ overlay.insertBefore(ocean,panel);
+}
 function start(key){
- const panel=shell(definitions[key][0]);mode=key;
+ const panel=shell(definitions[key][0]);mode=key;reefScenery(panel);overlay.className+=' arc-theme-'+key;
  const banner=el('div','arc-game-banner');banner.append(picture(key),el('p','',definitions[key][1]));panel.append(banner);
  const record=Q.P.challenges[key]||{tier:0,best:0};const tier=Math.min(2,record.tier);
  state={tier,practice:record.tier>=3,finished:false,paused:false,elapsed:0,score:0};
@@ -44,7 +53,7 @@ function start(key){
  if(key==='blocks')initBlocks(panel);if(key==='memory')initMemory();if(key==='sprint')initSprint();
  updateStatus();last=performance.now();raf=requestAnimationFrame(tick);
 }
-function pause(){if(!state||state.finished)return;state.paused=!state.paused;state.pauseBtn.textContent=state.paused?'Resume':'Pause';state.surface.classList.toggle('arc-paused',state.paused);last=performance.now();updateStatus();}
+function pause(){if(!state||state.finished)return;state.paused=!state.paused;state.pauseBtn.textContent=state.paused?'Resume':'Pause';state.surface.classList.toggle('arc-paused',state.paused);overlay.classList.toggle('reef-still',state.paused);last=performance.now();updateStatus();}
 function updateStatus(){
  if(!state)return;
  const s=state;let text=mode==='blocks'?`Rows ${s.lines}/${s.goal} · Score ${s.score}`:mode==='memory'?`Pairs ${s.pairs}/${s.goal} · ${Math.ceil(Math.max(0,s.seconds-s.elapsed))}s`:`Pearls ${s.score}/${s.goal} · ${Math.ceil(Math.max(0,s.seconds-s.elapsed))}s`;
@@ -69,7 +78,7 @@ function tick(now){
  if(!state||state.finished)return;const dt=Math.min(.1,(now-last)/1000);last=now;
  if(!state.paused){state.elapsed+=dt;
   if(mode==='blocks'){state.dropClock+=dt;if(state.dropClock>=Math.max(.16,.85-state.tier*.15-state.lines*.018)){state.dropClock=0;step();}if(state&&mode==='blocks')drawBlocks();}
-  else if(mode==='memory'){if(state.hideAt&&state.elapsed>=state.hideAt){for(const i of state.flips){state.buttons[i].textContent='?';state.buttons[i].setAttribute('aria-label','Hidden sea creature '+(i+1));}state.flips=[];state.hideAt=0;}}
+  else if(mode==='memory'){if(state.hideAt&&state.elapsed>=state.hideAt){for(const i of state.flips){state.buttons[i].textContent='?';state.buttons[i].classList.toggle('is-revealed',false);state.buttons[i].setAttribute('aria-label','Hidden sea creature '+(i+1));}state.flips=[];state.hideAt=0;}}
   else if(mode==='sprint'&&state.elapsed>=state.shiftAt)placePearl();
   if(state&&mode!=='blocks'&&state.elapsed>=state.seconds){finish(false);return;}updateStatus();
  }
@@ -105,7 +114,7 @@ function blockInput(action){
 function drawBlocks(){
  const s=state,g=s.canvas?.getContext('2d');if(!g)return;
  const colors=['','#b25bff','#ffbd24','#20e5c1','#fa63b5','#35bfff','#ff7242','#8ceafa'];
- g.fillStyle='#061e32';g.fillRect(0,0,300,540);
+ g.clearRect(0,0,300,540);g.fillStyle='rgba(2,24,43,.63)';g.fillRect(0,0,300,540);
  // Transparent jewel faces let the ocean grid show through; beveled facets give each cube depth.
  const cell=(x,y,v,ghost=false)=>{
   if(y<0)return;const X=x*30+2,Y=y*30+2,c=colors[v];
@@ -140,7 +149,7 @@ function initMemory(){
 }
 function flip(i){
  const s=state;if(!s||s.paused||s.hideAt||s.matched.has(i)||s.flips.includes(i))return;
- s.flips.push(i);s.buttons[i].textContent=s.deck[i];s.buttons[i].setAttribute('aria-label',s.deck[i]);
+ s.flips.push(i);s.buttons[i].textContent=s.deck[i];s.buttons[i].classList.toggle('is-revealed',true);s.buttons[i].setAttribute('aria-label',s.deck[i]);
  if(s.flips.length===2){const [a,b]=s.flips;if(s.deck[a]===s.deck[b]){s.matched.add(a);s.matched.add(b);s.buttons[a].disabled=s.buttons[b].disabled=true;s.pairs++;s.flips=[];if(s.pairs===s.goal){finish(true);return;}}else s.hideAt=s.elapsed+.8;}updateStatus();
 }
 // ---------- pearl sprint ----------
